@@ -11,11 +11,6 @@ ROLES = (
 )
 
 
-PLAN_STATUS = (
-    ('T', 'نشطة'),
-    ('F', 'غير نشطة')
-)
-
 
 GOAL_STATUS = (
     ('NS', 'لم يبدأ بعد'),
@@ -32,18 +27,18 @@ GOAL_PRIORITY = (
     ('L', 'منخفضة'),
 )
 
+READ = 'R'
+UNREAD = 'U'
 
 NOTE_STATUS = (
-    ('R', 'مقروءة'),
-    ('U', 'غير مقروءة')
+    (READ, 'مقروءة'),
+    (UNREAD, 'غير مقروءة')
 )
 
 
 
 # ---------------------------
-
 #  Role Model
-
 # ---------------------------
 class Role(models.Model): # 1 : M Relationship with User (One Side)
     role_name = models.CharField(max_length=2, choices=ROLES, default=ROLES[0][0])
@@ -53,9 +48,7 @@ class Role(models.Model): # 1 : M Relationship with User (One Side)
 
 
 # ---------------------------
-
 #  Departments Model
-
 # ---------------------------
 class Department (models.Model): 
     department_name = models.CharField(max_length=100, unique=True)  
@@ -70,9 +63,7 @@ class Department (models.Model):
 
 
 # ---------------------------
-
 #  User Model
-
 # ---------------------------
 class User(AbstractUser):
     # employee_number = models.DecimalField(max_digits=10,decimal_places=0)
@@ -88,9 +79,7 @@ class User(AbstractUser):
 
 
 # ---------------------------
-
 #  StrategicPlan Model
-
 # ---------------------------
 class StrategicPlan (models.Model):
     plan_name = models.CharField(max_length=200,unique=True, null=False, blank=False, help_text="اسم الخطة الاستراتيجية")
@@ -98,7 +87,7 @@ class StrategicPlan (models.Model):
     mission = models.TextField(null=False, blank=False, help_text="الرسالة")
     start_date = models.DateField(null=True, blank=True, default=date.today, help_text="تاريخ بداية الخطة")
     end_date = models.DateField(null=True, blank=True, help_text="تاريخ نهاية الخطة")
-    plan_status = models.CharField(max_length=1, choices=PLAN_STATUS, default=PLAN_STATUS[0][0], help_text="حالة الخطة")
+    is_active = models.BooleanField(default=True)
 
     class Meta:
         verbose_name = "StrategicPlan"
@@ -111,9 +100,7 @@ class StrategicPlan (models.Model):
 
 
 # ---------------------------
-
 #  StrategicGoal Model
-
 # ---------------------------
 class StrategicGoal (models.Model):
     strategicplan= models.ForeignKey(StrategicPlan, on_delete=models.CASCADE, related_name="goals")
@@ -136,9 +123,7 @@ class StrategicGoal (models.Model):
 
 
 # ---------------------------
-
 #  Initiative Model
-
 # ---------------------------
 class Initiative(models.Model):  # 1 : M Relationship with StrategicGoal (Many Side)
     title = models.CharField(max_length=200)
@@ -159,9 +144,7 @@ class Initiative(models.Model):  # 1 : M Relationship with StrategicGoal (Many S
 
 
 # ---------------------------
-
 #  UserInitiative Model
-
 # ---------------------------
 class UserInitiative(models.Model): # M : M relationshp  
     status = models.CharField(max_length=20)
@@ -174,9 +157,7 @@ class UserInitiative(models.Model): # M : M relationshp
 
 
 # ---------------------------
-
 #  KPI Model
-
 # ---------------------------
 class KPI(models.Model): # 1 : M relationshp with Initiative (Many Side) 
     kpi = models.CharField(max_length=255)
@@ -190,16 +171,14 @@ class KPI(models.Model): # 1 : M relationshp with Initiative (Many Side)
 
 
 # ---------------------------
-
 #  Note Model
-
 # ---------------------------
 class Note (models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE,  related_name="notes")
     initiative = models.ForeignKey(Initiative, on_delete=models.CASCADE, related_name="notes")
     department = models.ForeignKey(Department,null=True, blank=True, on_delete=models.SET_NULL, related_name="notes")
     content = models.TextField(null=False, blank=False, help_text="محتوى الملاحظة")
-    note_status = models.CharField(max_length=1, choices=NOTE_STATUS, default=NOTE_STATUS[0][0], help_text="حالة الملاحظة")
+    note_status = models.CharField(max_length=1, choices=NOTE_STATUS, default=UNREAD, help_text="حالة الملاحظة")
     created_at =  models.DateTimeField(auto_now_add=True)
     
     class Meta:
