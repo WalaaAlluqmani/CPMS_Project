@@ -218,12 +218,7 @@ class AllGoalsView(ListView):
 class GoalDetailsview(DetailView):
     model = StrategicGoal 
     template_name = 'goal_detail.html'
-    context_object_name = 'goal'
-          
-class GoalDetailsview(DetailView):
-    model = StrategicGoal 
-    template_name = 'goal_detail.html'
-    context_object_name = 'goal'
+    context_object_name = 'goal'     
         
 #LoginRequiredMixin, UserPassesTestMixin, CreateView            
 class CreateGoalView(CreateView):
