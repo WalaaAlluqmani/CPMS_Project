@@ -193,9 +193,7 @@ class Note (models.Model):
 
 
 # ---------------------------
-
 #  Log Model
-
 # ---------------------------
 class Log (models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="logs")
