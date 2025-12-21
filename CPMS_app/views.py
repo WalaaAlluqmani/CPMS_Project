@@ -46,19 +46,25 @@ class AllInitiativeView(ListView):
     '''
     List all initiatives
     - General Manager sees all initiatives
-    - Other users see only initiatives they are assigned to
+    - Managers see their departments initiatives 
+    - Employee see the initiatives they are assigned to
     '''
     model = Initiative 
     template_name = 'initiatives_list.html'
     context_object_name = 'initiatives'
     
     def get_queryset(self):
-        if self.request.user.role:
+        goal_id = self.kwargs.get('goal_id')
+        if goal_id:
             if self.request.user.role.role_name == 'GM':
                 return Initiative.objects.all()
-            else:
-                return Initiative.objects.filter( userinitiative__user = self.request.user )
-
+            else:  
+                return Initiative.objects.filter( strategic_goal_id = goal_id , userinitiative__user = self.request.user )
+        else:
+            if self.request.user.role.role_name == 'GM':
+                return Initiative.objects.all()
+            else:  # Managers and Employees
+                return Initiative.objects.filter( userinitiative__user=self.request.user )
 
 
 class InitiativeDetailsView(DetailView):
@@ -204,7 +210,7 @@ class AllKPIsView(ListView): #not needed but here we go
     '''
     model = KPI 
     template_name = '@tags_list.html'
-    context_object_name = 'KPIs'
+    context_object_name = 'kpis'
     
     def get_queryset(self):
         return KPI.objects.filter(initiative__userinitiative__user=self.request.user)
