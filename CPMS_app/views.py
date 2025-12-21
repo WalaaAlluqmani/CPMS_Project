@@ -261,7 +261,10 @@ class AllKPIsView(ListView): #not needed but here we go
 
 
 
-# Paths and URLs, conditioning (depending on Role), Model Handling 
+# Paths and URLs [done]
+# conditioning (depending on Role)
+# Model Handling 
+
 
 
 #########################################################################################################################
