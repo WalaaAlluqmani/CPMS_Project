@@ -280,6 +280,9 @@ class AllKPIsView(ListView): #not needed but here we go
 # ---------------------------
 #LoginRequiredMixin,
 class AllDepartmentsView(ListView): 
+    '''
+    - List all departments
+    '''
     model = Department 
     template_name = 'departments_list.html'
     context_object_name = 'departments'
@@ -293,6 +296,10 @@ class AllDepartmentsView(ListView):
 # ---------------------------
 #LoginRequiredMixin, ListView
 class AllPlansView(ListView): 
+    '''
+    - Displays a list of all strategic plans
+    - Only accessible to users with roles GM, CM, or M
+    '''
     model = StrategicPlan 
     template_name = 'plans_list.html'
     context_object_name = 'plans'
@@ -306,6 +313,9 @@ class AllPlansView(ListView):
 
 #LoginRequiredMixin, DetailView 
 class PlanDetailsview(DetailView):
+    '''
+    - Displays details of a single strategic plan
+    '''
     model = StrategicPlan 
     template_name = 'plan_detail.html'
     context_object_name = 'plan'
@@ -319,32 +329,68 @@ class PlanDetailsview(DetailView):
           
 #LoginRequiredMixin, UserPassesTestMixin, CreateView            
 class CreatePlanView(CreateView):
+    '''
+    - Only Committee Manager can create a new strategic plan
+    - Allows creating a new strategic plan if no active plan exists
+    - Redirects to plan list after creation
+    '''
     model = StrategicPlan
     fields = ['plan_name', 'vision', 'mission', 'start_date', 'end_date']
     template_name = 'plan_form.html'
-    success_url = reverse_lazy('')
+    success_url = reverse_lazy('plans_list')
     
-    def test_func(self):
-        return self.request.user.role.role_name == 'CM'  #مدير لجنة الخطط
+    def dispatch(self, request, *args, **kwargs):
+        user = request.user
+
+        # Only Committee Manager
+        if user.role.role_name != 'CM':
+            raise PermissionDenied("ليس مسموح لك بإنشاء خطة.")
+
+        # Check if an active plan already exists
+        if StrategicPlan.objects.filter(is_active=True).exists():
+            raise PermissionDenied("يوجد خطة استراتيجية نشطة بالفعل.")
+
+        return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
         form.instance.user = self.request.user 
         return super().form_valid(form) 
 
-#LoginRequiredMixin, UserPassesTestMixin, CreateView   
+#LoginRequiredMixin, UserPassesTestMixin, UpdateView   
 class UpdatePlanView(UpdateView):
+    '''
+    - Only Committee Manager can update an existing plan
+    - Redirects to plans list after update
+    '''
     model = StrategicPlan
     fields = ['plan_name', 'vision', 'mission', 'start_date', 'end_date']
     template_name = 'plan_form.html'
-    success_url = reverse_lazy('')
+    success_url = reverse_lazy('plans_list')
     
-    def test_func(self):
-        return self.request.user.role.role_name == 'CM' 
+    def dispatch(self, request, *args, **kwargs):
+        user = request.user
 
+        # Only Committee Manager
+        if user.role.role_name != 'CM':
+            raise PermissionDenied("ليس لديك صلاحية تعديل هذه الخطة.")
+
+        # Get the plan object that is going to be updated
+        plan = self.get_object()
+
+        # Only allow updating if the plan is active
+        if not plan.is_active:
+            raise PermissionDenied("يمكنك تعديل الخطط النشطة حاليًا فقط!")
+
+    
+#LoginRequiredMixin, UserPassesTestMixin, DeleteView  
 class DeletePlanView(DeleteView):
+    '''
+    - Only Committee Manager can delete a plan 
+    - Redirects to plans list after deletion
+    '''
     model = StrategicPlan
     template_name = 'plan_confirm_delete.html'
-    success_url = reverse_lazy('')
+    success_url = reverse_lazy('plans_list')
 
     def test_func(self):
         return self.request.user.role.role_name == 'CM' 
@@ -354,6 +400,12 @@ class DeletePlanView(DeleteView):
 # ---------------------------
 #LoginRequiredMixin, ListView
 class AllGoalsView(ListView): 
+    '''
+    Displays a list of all strategic plans
+    - General Manager sees all goals
+    - Managers and Committee Managers see goals of their department
+    - Employees see goals linked to their initiatives
+    '''
     model = StrategicGoal 
     template_name = 'goals_list.html'
     context_object_name = 'goals'
@@ -374,16 +426,24 @@ class AllGoalsView(ListView):
         
 #LoginRequiredMixin, DetailView 
 class GoalDetailsview(DetailView):
+    '''
+    - Shows details of a single goal
+    '''
     model = StrategicGoal 
     template_name = 'goal_detail.html'
     context_object_name = 'goal'     
         
 #LoginRequiredMixin, UserPassesTestMixin, CreateView            
 class CreateGoalView(CreateView):
+    '''
+    - Allows Managers and Committee Managers to create a new goal
+    - Links the goal to the plan and the user's department
+    - Redirects to the goals list after creation
+    '''
     model = StrategicGoal
     fields = ['goal_title', 'description', 'start_date', 'end_date', 'goal_status', 'goal_priority']
     template_name = 'goal_form.html'
-    success_url = reverse_lazy('')
+    success_url = reverse_lazy('goals_list')
     
     def test_func(self):
         return self.request.user.role.role_name in ['CM','M'] 
@@ -396,49 +456,62 @@ class CreateGoalView(CreateView):
    
 #LoginRequiredMixin, UserPassesTestMixin, CreateView   
 class UpdateGoalView(UpdateView):
+    '''
+    - Managers and Committee Managers can update goals in their department
+    - Updates goal details
+    - Redirects to goals list
+    '''
     model = StrategicGoal
     fields = ['goal_title', 'description', 'start_date', 'end_date', 'goal_status', 'goal_priority']
     template_name = 'goal_form.html'
-    success_url = reverse_lazy('')
+    success_url = reverse_lazy('goals_list')
 
     def get_queryset(self):
         user = self.request.user
         role = user.role.role_name
 
         if role in ['M', 'CM']:
-            return StrategicGoal.objects.filter(department=user.department)
-        return StrategicGoal.objects.none()
+            qs = StrategicGoal.objects.filter(department=user.department)
+            if not qs.filter(pk=self.kwargs['pk']).exists():
+                raise PermissionDenied("ليس لديك صلاحية تعديل هذا الهدف.")
+            return qs
 
-    def dispatch(self, request, *args, **kwargs):
-        if not self.get_queryset().filter(pk=self.kwargs['pk']).exists():
-            raise PermissionDenied("ليس لديك صلاحية تعديل هذا الهدف.")
-        return super().dispatch(request, *args, **kwargs)
-     
+        raise PermissionDenied("ليس لديك صلاحية تعديل هذا الهدف.")
     
 
 class DeleteGoalView(DeleteView):
+    '''
+    - Managers and Committee Managers can delete goals in their department
+    - Shows confirmation before deletion
+    - Redirects to goals list
+    '''
     model = StrategicGoal
     template_name = 'goal_confirm_delete.html'
-    success_url = reverse_lazy('')
+    success_url = reverse_lazy('goals_list')
 
     def get_queryset(self):
         user = self.request.user
         role = user.role.role_name
 
         if role in ['M', 'CM']:
-            return StrategicGoal.objects.filter(department=user.department)
-        return StrategicGoal.objects.none()
+            qs = StrategicGoal.objects.filter(department=user.department)
+            if not qs.filter(pk=self.kwargs['pk']).exists():
+                raise PermissionDenied("ليس لديك صلاحية حذف هذا الهدف.")
+            return qs
 
-    def dispatch(self, request, *args, **kwargs):
-        if not self.get_queryset().filter(pk=self.kwargs['pk']).exists():
-            raise PermissionDenied("ليس لديك صلاحية حذف هذا الهدف.")
-        return super().dispatch(request, *args, **kwargs)
+        raise PermissionDenied("ليس لديك صلاحية حذف هذا الهدف.")
     
 # ---------------------------
 #  Note View
 # ---------------------------
 #LoginRequiredMixin, ListView
 class AllNotesView(ListView): 
+    '''
+    - Displays a list of notes for the current user
+    - GM sees only notes they sent
+    - M and CM see notes they sent plus notes sent by GM in their department
+    - E sees notes they sent and notes related to initiatives they are part of, or notes sent to them by their manager
+    '''
     model = Note 
     template_name = 'notes_list.html'
     context_object_name = 'notes'
@@ -448,44 +521,39 @@ class AllNotesView(ListView):
         role = user.role.role_name
 
         if role == 'GM':
-            #كل الملاحظات اللي ارسلها
+            # All notes sent by the General Manager
             return Note.objects.filter(user=user)
         elif role in ['M','CM']:
-            #كل الملاحظات اللي ارسلها واللي اسلتمها من المدير العام
+            # All notes sent by the user and those received from the General Manager
             return Note.objects.filter(user=user,department=user.department)
         elif role == 'E':
-            #كل الملاحظات اللي ارسلها واللي استلمهاعلى نفس المبادرة أو ارسلها له المدير 
+            # All notes sent by the user and those received for the same initiative or sent to them by the manager
             return Note.objects.filter(user=user,initiative__userinitiative__user=user,department=user.department).distinct()
 
         return Note.objects.none()
         
 #LoginRequiredMixin, DetailView 
 class NoteDetailsview(DetailView):
+    '''
+    - Shows details of a single note
+    '''
     model = Note 
     template_name = 'note_detail.html'
     context_object_name = 'note'
-
-    """اعتقد مالها داعي يمكن احذفها
-    def get_queryset(self):
-      
-        user = self.request.user
-        return Note.objects.filter(sender=user, receiver=user, initiative__userinitiative__user=user).distinct()
-
-            def dispatch(self, request, *args, **kwargs):
-        if not self.get_queryset().filter(pk=self.kwargs['pk']).exists():
-            raise PermissionDenied("ليس لديك صلاحية عرض هذه الملاحظة.")
-        return super().dispatch(request, *args, **kwargs)
-     """
-
         
-#LoginRequiredMixin, UserPassesTestMixin, CreateView            
+#LoginRequiredMixin, CreateView            
 class CreateNoteView(CreateView):
+    '''
+    - Allows creating a new note
+    - Sets sender as current user
+    - Receiver options filtered based on sender's role
+    '''
     model = Note
     fields = ['content', 'initiative', 'department', 'receiver']
     template_name = 'note_form.html'
-    success_url = reverse_lazy('')
+    success_url = reverse_lazy('notes_list')
     
-    #هذا عشان يسجل اسم المستلم من dropdown مخصصة
+   # This is to set the receiver's name from a custom dropdown
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
         user = self.request.user
@@ -509,18 +577,24 @@ class CreateNoteView(CreateView):
    
 #LoginRequiredMixin, UserPassesTestMixin, CreateView   
 class UpdateNoteView(UpdateView):
+    '''
+    - Allows updating a note
+    - Only the sender can update their own notes
+    - Only content fields is editable
+    - Redirects to notes list
+    '''
     model = Note
-    fields = ['content', 'initiative', 'department', 'receiver']
+    fields = ['content']
     template_name = 'note_form.html'
-    success_url = reverse_lazy('')
+    success_url = reverse_lazy('notes_list')
 
     def get_queryset(self):
-        return Note.objects.filter(sender=self.request.user)
-    
-    def dispatch(self, request, *args, **kwargs):
-        if not self.get_queryset().filter(pk=self.kwargs['pk']).exists():
+       user = self.request.user
+
+       qs = Note.objects.filter(sender=user)
+       if not qs.filter(pk=self.kwargs['pk']).exists():
             raise PermissionDenied("ليس لديك صلاحية تعديل هذه الملاحظة.")
-        return super().dispatch(request, *args, **kwargs)
+       return qs
     
     def form_valid(self, form):
         form.instance.sender = self.request.user
@@ -528,31 +602,39 @@ class UpdateNoteView(UpdateView):
     
 
 class DeleteNoteView(DeleteView):
+    '''
+    - Allows deleting a note
+    - Only the sender can delete their own notes
+    - Prevents deleting notes sent by others
+    - Redirects to notes list
+    '''
     model = Note
     template_name = 'note_confirm_delete.html'
-    success_url = reverse_lazy('')
+    success_url = reverse_lazy('notes_list')
 
     def get_queryset(self):
-        return Note.objects.filter(sender=self.request.user)
+        user = self.request.user
 
-    def dispatch(self, request, *args, **kwargs):
-        if not self.get_queryset().filter(pk=self.kwargs['pk']).exists():
+        qs = Note.objects.filter(sender=user)
+        if not qs.filter(pk=self.kwargs['pk']).exists():
             raise PermissionDenied("ليس لديك صلاحية حذف هذه الملاحظة.")
-        return super().dispatch(request, *args, **kwargs)
-
+        return qs
+    
+    
 # ---------------------------
 #  Log View
 # ---------------------------
-#LoginRequiredMixin,
+#LoginRequiredMixin,ListView
 class AllLogsView(ListView): 
     model = Log 
     template_name = 'logs_list.html'
     context_object_name = 'logs'
-#نحط شرط لللادمن ممكن
+
     def get_queryset(self):
         return Log.objects.all()
     
 
-    #الداش بورد والتفاصيل هذي اتوقع لازم لها فيو
-    #برضو التوجية
-    #وانه البيانات تبان فصفحات ثانية للباقين
+  
+
+
+
