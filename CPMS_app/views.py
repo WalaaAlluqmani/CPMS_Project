@@ -132,7 +132,7 @@ class InitiativeDetailsView(DetailView):
 
 
 
-class CreateInitiativeView(IsManagerUserMixin,CreateView,LogMixin): #only Managers 
+class CreateInitiativeView(IsManagerUserMixin, CreateView, LogMixin): #only Managers 
     '''
     - Allows Managers to create a new initiative
     - Sets the strategic goal based on the goal_id in the URL
@@ -158,7 +158,7 @@ class CreateInitiativeView(IsManagerUserMixin,CreateView,LogMixin): #only Manage
 
 
 
-class UpdateInitiativeView(IsManagerUserMixin,UpdateView,LogMixin):  #managers only
+class UpdateInitiativeView(IsManagerUserMixin, UpdateView, LogMixin):  #managers only
     '''
     - Allows updating an existing initiative
     - Only the initiative fields are editable (title, description, dates, priority, category)
@@ -177,7 +177,7 @@ class UpdateInitiativeView(IsManagerUserMixin,UpdateView,LogMixin):  #managers o
 
 
 
-class DeleteInitiativeView(IsManagerUserMixin, DeleteView,LogMixin):#managers only
+class DeleteInitiativeView(IsManagerUserMixin, DeleteView, LogMixin):#managers only
     '''
     - Allows deletion of an initiative
     - All related UserInitiative entries are automatically deleted (on_delete=CASCADE)
@@ -277,7 +277,7 @@ def create_kpi_view(request, initiative_id):
 
 
 
-class DeleteKPIView(IsManagerUserMixin,DeleteView,LogMixin):
+class DeleteKPIView(IsManagerUserMixin, DeleteView, LogMixin):
     '''
     - Allows users to delete a KPI
     - Confirms deletion using a template
@@ -295,7 +295,7 @@ class DeleteKPIView(IsManagerUserMixin,DeleteView,LogMixin):
 
 
 
-class UpdateKPIView(IsManagerUserMixin,UpdateView,LogMixin):
+class UpdateKPIView(IsManagerUserMixin, UpdateView, LogMixin):
     '''
     - Allows users to update an existing KPI
     - Lets users edit fields like kpi name, unit, target, and actual values
