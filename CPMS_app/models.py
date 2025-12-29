@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from datetime import date
-
+from django.utils import timezone
 
 
 ROLES = (
@@ -97,6 +97,11 @@ class StrategicPlan (models.Model):
 
     def __str__(self):
         return self.plan_name
+    
+    def update_status(self):
+        if self.is_active and self.end_date < timezone.now().date():
+            self.is_active = False
+            self.save()
 
 
 

@@ -1,3 +1,4 @@
+from django.utils import timezone
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy, reverse
 from django.views.generic import ListView, DetailView, CreateView
@@ -455,7 +456,7 @@ class AllDepartmentsView(LoginRequiredMixin, ListView):
 # ---------------------------
 #  StrategicPlan View
 # ---------------------------
-class AllPlansView(LoginRequiredMixin, ListView): 
+class AllPlansView(ListView): 
     '''
     - Displays a list of all strategic plans
     - Only accessible to users with roles GM, CM, or M
@@ -465,11 +466,14 @@ class AllPlansView(LoginRequiredMixin, ListView):
     context_object_name = 'plans'
 
     def get_queryset(self):
-        if self.request.user.role:
-            if self.request.user.role.role_name in ['GM', 'CM', 'M']:
+    #    if self.request.user.role:
+         #   if self.request.user.role.role_name in ['GM', 'CM', 'M']:
+                 # تحديث الخطط المنتهية تلقائيًا
+                today = timezone.now().date()
+                StrategicPlan.objects.filter(is_active=True, end_date__lt=today).update(is_active=False)
                 return StrategicPlan.objects.all()
-            else:
-                raise PermissionDenied 
+           # else:
+               # raise PermissionDenied 
 
 #LoginRequiredMixin, DetailView 
 class PlanDetailsview(LoginRequiredMixin, DetailView):
