@@ -9,7 +9,8 @@ from .views import (
     DeleteInitiativeView, AllKPIsView, KPIDetailsView, create_kpi_view, UpdateKPIView,
     DeleteKPIView, AllDepartmentsView, AllNotesView, NoteDetailsview, CreateNoteView,
     UpdateNoteView, DeleteNoteView,  AllLogsView,
-    assign_employee_to_initiative
+    assign_employee_to_initiative,
+    dashboard_view
 )
 
 
@@ -17,6 +18,8 @@ urlpatterns = [
 
     path('access-denied/', TemplateView.as_view(template_name='access_denied.html'), name='access_denied'),
 
+    #Dashboard
+    path('', dashboard_view, name='dashboard'),
     #Departments
     path('departments/',AllDepartmentsView.as_view(), name='departments_list'), 
 
