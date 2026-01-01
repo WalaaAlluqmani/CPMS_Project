@@ -146,7 +146,7 @@ class RoleRequiredMixin(UserPassesTestMixin):
 
 
 
-class InitiativePermissionMixin(UserPassesTestMixin):
+class InitiativePermissionMixin:
     '''
     Users can only access initiatives they are allowed to
     GM: All initaitves 
@@ -168,8 +168,11 @@ class InitiativePermissionMixin(UserPassesTestMixin):
             
             if role == 'GM':
                 return Initiative.objects.filter(strategic_goal = goal)
+            
+            elif user.department != goal.department:
+                raise PermissionDenied("ليست لديك صلاحية لرؤية هذه الصفحة")
 
-            elif role in ['CM','M'] and user.department == goal.department:
+            elif role in ['CM','M']:
                 qs = Initiative.objects.filter( strategic_goal = goal , strategic_goal__department = user.department)
                 
             elif role == 'E':
@@ -195,18 +198,10 @@ class InitiativePermissionMixin(UserPassesTestMixin):
         qs = self.get_initiative_queryset()
 
         pk = self.kwargs.get('pk')
-        if pk:
+        if pk: #delete, update, detail
             if not qs.filter(pk=pk).exists(): #trying to url tamper
                 raise PermissionDenied("ليست لديك صلاحية لرؤية هذه الصفحة")
         return qs
-    
-    def test_func(self):
-        try:
-            # if user can see at least one initiative, allow
-            return self.get_initiative_queryset().exists()
-        except PermissionDenied:
-            return False
-
 
 
 
@@ -313,9 +308,27 @@ class CreateInitiativeView(LoginRequiredMixin, RoleRequiredMixin, InitiativePerm
         )
         
         return response
+    
     def get_success_url(self):
         # return reverse('goal_detail', kwargs={'goal_id': self.kwargs['goal_id']})
         return reverse('initiatives_list')
+    
+    
+    def test_func(self):
+        user = self.request.user
+        goal_id = self.kwargs.get('goal_id')
+        if not goal_id:
+            return False
+        goal = get_object_or_404(StrategicGoal, id=goal_id)
+
+        if user.role.role_name in ['M', 'CM'] and goal.department == user.department:
+            return True
+        return False
+
+    def handle_no_permission(self):
+        if not self.request.user.is_authenticated:
+            return redirect('login')
+        raise PermissionDenied("ليست لديك صلاحية لرؤية هذه الصفحة")
 
 
 
@@ -369,46 +382,72 @@ def is_manager(user):
     return user.role and user.role.role_name in ['M', 'CM']
 
 
-
 @login_required
 @log_action()
 @user_passes_test(is_manager)
 def assign_employee_to_initiative(request, pk):
-    '''
-    - Allows assigning one or more employees to a given initiative
-    - GET request: returns a list of employees in the current user's department to select from
-    - POST request: receives a list of employee IDs from the form and creates UserInitiative entries
-    - After successful assignment, redirects to the initiative detail page
-    '''
     initiative = get_object_or_404(Initiative, id=pk)
-    
-    if request.user.role.role_name not in ['M', 'CM'] or initiative.strategic_goal.department != request.user.department:
-        raise PermissionDenied("ليست لديك صلاحية لرؤية هذه الصفحة")
+    employees = User.objects.filter(role__role_name='E', department=request.user.department)
 
-    employees = User.objects.filter(role__role_name='E', department = request.user.department)  
     assigned_employee_ids = set(
         UserInitiative.objects.filter(initiative=initiative).values_list('user_id', flat=True)
     )
 
     if request.method == "POST": #Post request: receives a list of employees
-        employees_ids_list = request.POST.getlist('user_ids') #$$use in template 
-        if employees_ids_list:
-            for employee_id in employees_ids_list:
-                employee = get_object_or_404(User, id=employee_id)
-                UserInitiative.objects.get_or_create(
-                user=employee,
-                initiative=initiative,
-                status = STATUS[0][0],
-                progress = 0
-                )
+        employee_ids_to_add = request.POST.getlist('to_add[]')
+        employee_ids_to_remove = request.POST.getlist('to_remove[]')
+
+        for emp_id in employee_ids_to_add:
+            emp = get_object_or_404(User, id=emp_id)
+            UserInitiative.objects.get_or_create(user=emp, initiative=initiative, status=STATUS[0][0], progress=0)
+
+        for emp_id in employee_ids_to_remove:
+            UserInitiative.objects.filter(user_id=emp_id, initiative=initiative).delete()
+
         return redirect('initiative_detail', pk=initiative.id)
-    
-    else: #Get request: returns a list of the department employees 
-        return render(request, 'assign_employee.html', {
+
+    return render(request, 'assign_employee.html', { #Get request: returns a list of the department employees 
         'initiative': initiative,
         'employees': employees,
         'assigned_employee_ids': assigned_employee_ids,
     })
+# @login_required
+# @log_action()
+# @user_passes_test(is_manager)
+# def assign_employee_to_initiative(request, pk):
+#     '''
+#     - Allows assigning one or more employees to a given initiative
+#     - GET request: returns a list of employees in the current user's department to select from
+#     - POST request: receives a list of employee IDs from the form and creates UserInitiative entries
+#     - After successful assignment, redirects to the initiative detail page
+#     '''
+#     if request.user.role.role_name not in ['M', 'CM'] or initiative.strategic_goal.department != request.user.department:
+#         raise PermissionDenied("ليست لديك صلاحية لرؤية هذه الصفحة")
+#     initiative = get_object_or_404(Initiative, id=pk)
+#     employees = User.objects.filter(role__role_name='E', department = request.user.department)  
+#     assigned_employee_ids = set(
+#         UserInitiative.objects.filter(initiative=initiative).values_list('user_id', flat=True)
+#     )
+
+    # if request.method == "POST": #Post request: receives a list of employees
+    #     employees_ids_list = request.POST.getlist('user_ids') #$$use in template 
+    #     if employees_ids_list:
+    #         for employee_id in employees_ids_list:
+    #             employee = get_object_or_404(User, id=employee_id)
+    #             UserInitiative.objects.get_or_create(
+    #             user=employee,
+    #             initiative=initiative,
+    #             status = STATUS[0][0],
+    #             progress = 0
+    #             )
+    #     return redirect('initiative_detail', pk=initiative.id)
+    
+    # else: #Get request: returns a list of the department employees 
+    #     return render(request, 'assign_employee.html', {
+    #     'initiative': initiative,
+    #     'employees': employees,
+    #     'assigned_employee_ids': assigned_employee_ids,
+    # })
 
 
 
