@@ -1,5 +1,7 @@
 {% extends 'base.html' %}
 {% block content %}    
+{% include "partials/confirm_delete.html" %}
+
 <!-- ##add notes to general manager -->
 <h1> مبادرة {{ initiative.title }}</h1>
 <ul>
@@ -12,23 +14,32 @@
 </ul>
 
 {% if user.role.role_name == 'M' or user.role.role_name == 'CM' %}
-    <button onclick="window.open(
+    <button class="button" onclick="window.open(
     '/initiatives/{{initiative.id}}/update/','_blank');">
         تعديل
     </button>
 
-    <button onclick="window.open(
+    <!-- <button class="button" onclick="window.open(
     '/initiatives/{{initiative.id}}/delete/','_blank');">
+        حذف
+    </button> -->
+    <button
+        class="button"
+        onclick="openDeleteModal(
+            '/initiatives/{{ initiative.id }}/delete/',
+            'هل أنت متأكد أنك تريد حذف هذه المبادرة؟'
+        )">
         حذف
     </button>
 
-    <button onclick="openPopup('/initiatives/{{initiative.id}}/assign')"> <!-- ##error handling -->
+
+    <button  class="button"onclick="openPopup('/initiatives/{{initiative.id}}/assign')"> <!-- ##error handling -->
         تعيين موظفين
     </button>
 {% endif %}
 
 {% if user.role.role_name != 'GM' %} <!-- managers and employees can send initiative-level notes -->
-    <button onclick="openPopup('/notes/create')">أرسل ملاحظة</button>
+    <button class="button" onclick="openPopup('/notes/create')">أرسل ملاحظة</button>
 {% endif %}
 
 {% endblock %}
