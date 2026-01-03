@@ -1,4 +1,5 @@
-
+<!-- Loop through plans and display each in a table row-->
+ 
     {% for plan in plans %}
     <tr class="border-b hover:bg-gray-50" data-title="{{ plan.plan_name }}" data-status="{% if plan.is_active %}active{% else %}inactive{% endif %}">
         <td class="px-6 py-4 font-medium">{{ plan.plan_name }}</td>
@@ -10,11 +11,15 @@
             <span class="px-3 py-1 text-xs bg-gray-200 text-gray-700 rounded-full">غير نشطة</span>
             {% endif %}
         </td>
-        <button 
+        <td class="px-6 py-4 text-center">
+              <a href="{% url 'plan_detail' plan.id %}" class="text-blue-600 hover:underline">عرض</a>
+            <a href="{% url 'plan_update' plan.id %}" class="text-blue-600 hover:underline">تعديل</a>
+            <button 
     onclick="openDeleteModal(`{% url 'plan_delete' plan.id %}`, `هل تريد حذف هذه الخطة؟`)" 
     class="text-red-600">
                حذف
          </button>
+        </td>
     </tr>
     {% empty %}
     <tr >

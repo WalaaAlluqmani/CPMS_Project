@@ -4,9 +4,7 @@
 {% block title %}قائمة الخطط الاستراتيجية{% endblock %}
 
 {% block content %}
-
-{% include "includes/confirm_delete.html" %}
-
+ 
 <div class="max-w-4xl mx-auto px-6 mt-10" dir="rtl">
     <div class="overflow-x-auto bg-white shadow-sm rounded-lg border border-gray-200 max-h-[500px] overflow-y-auto">
         
@@ -89,7 +87,7 @@
                     <th class="px-6 py-3 font-semibold">عنوان الخطة</th>
                     <th class="px-6 py-3 font-semibold">أُنشئت بواسطة</th>
                     <th class="px-6 py-3 font-semibold">الحالة</th>
-                    <th class="px-6 py-3 font-semibold text-center">الإجراء</th>
+                    <th class="px-6 py-3 font-semibold text-center"> </th>
                 </tr>
             </thead>
             <tbody id="plansBody">
@@ -226,6 +224,20 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
 });
-</script>
+function openDeleteModal(deleteUrl, message) {
+    const modal = document.getElementById('deleteModal');
+    const form  = document.getElementById('deleteModalForm');
+    const text  = document.getElementById('deleteModalText');
 
+    form.action = deleteUrl;
+    text.textContent = message;
+    modal.classList.remove('hidden');
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.add('hidden');
+}
+
+</script>
+{% include 'partials/confirm_delete.html' %}
 {% endblock %}

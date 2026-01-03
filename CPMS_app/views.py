@@ -498,7 +498,7 @@ class AllPlansView(ListView):
     model = StrategicPlan
     template_name = 'plans_list.html'
     context_object_name = 'plans'
-    paginate_by = 3 # Number of plans to display per page
+    paginate_by = 2 # Number of plans to display per page
     allowed_roles = ['M', 'CM', 'GM']  # Roles allowed to access this view
 
     def get_queryset(self):
