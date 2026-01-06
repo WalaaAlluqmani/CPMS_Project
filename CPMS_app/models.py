@@ -134,7 +134,7 @@ class Initiative(models.Model):  # 1 : M Relationship with StrategicGoal (Many S
     end_date = models.DateField()
     priority = models.CharField( max_length = 1, choices = PRIORITY, default= PRIORITY[3][0])
     category = models.CharField(max_length=50)
-    strategic_goal = models.ForeignKey(StrategicGoal, on_delete=models.CASCADE)
+    strategic_goal = models.ForeignKey(StrategicGoal, on_delete=models.CASCADE )
     
     class Meta:
         verbose_name = "Initiative"
