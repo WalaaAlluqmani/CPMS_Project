@@ -15,7 +15,7 @@ from django.core.exceptions import PermissionDenied
 from functools import wraps
 from .models import ( Role, Department, User, StrategicPlan, StrategicGoal, 
                         Initiative, UserInitiative, KPI, Note, Log, STATUS)
-from .services import generate_KPIs,  create_log
+from .services import generate_KPIs,  create_log, get_plan_dashboard
 from .forms import KPIForm, StrategicGoalForm, StrategicPlanForm
 from django.template.loader import render_to_string
 from django.db.models import Q
@@ -634,6 +634,12 @@ class PlanDetailsview(LoginRequiredMixin, RoleRequiredMixin, DetailView):
 
     def get_queryset(self):
         return StrategicPlan.objects.all()
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        dashboard_data = get_plan_dashboard(self.object, self.request.user)
+        context.update(dashboard_data)
+        return context
 
             
 class CreatePlanView(LoginRequiredMixin, LogMixin, CreateView):
@@ -651,14 +657,13 @@ class CreatePlanView(LoginRequiredMixin, LogMixin, CreateView):
         if  StrategicPlan.objects.filter(is_active=True):
             raise PermissionDenied("توجد خطة نشطة حاليًا")
         return super().dispatch(request, *args, **kwargs)
-
-    
     
     def form_valid(self, form):
         self.object = form.save(user=self.request.user)
         messages.success(self.request, "تمت إضافة الخطة بنجاح")
         return super().form_valid(form)
  
+
 class UpdatePlanView(LoginRequiredMixin, LogMixin, UpdateView):
     '''
     - Only Committee Manager can update an existing plan
@@ -704,7 +709,7 @@ class AllGoalsView(LoginRequiredMixin, ListView):
     - Employees see goals linked to their initiatives
     '''
     model = StrategicGoal 
-    template_name = 'goals_list.html'
+    template_name = 'partials/goals_list.html'
     context_object_name = 'goals'
         
     def get_queryset(self):
@@ -716,7 +721,8 @@ class AllGoalsView(LoginRequiredMixin, ListView):
         elif role in ['M','CM']:
             return StrategicGoal.objects.filter(department = user.department)
         elif role == 'E':
-            return StrategicGoal.objects.filter(initiative__userinitiative__user = user).distinct()
+            return StrategicGoal.objects.all().prefetch_related('initiative_set__userinitiative_set')
+
         
         return StrategicGoal.objects.none()
 
@@ -739,7 +745,7 @@ class CreateGoalView(LoginRequiredMixin, RoleRequiredMixin, LogMixin, CreateView
     model = StrategicGoal
     form_class = StrategicGoalForm
     template_name = 'goal_form.html'
-    success_url = reverse_lazy('goals_list')
+    success_url = reverse_lazy('partials\goals_list.html')
     allowed_roles = ['M', 'CM']  # Roles allowed to access this view
 
     def form_valid(self, form):
@@ -756,7 +762,7 @@ class UpdateGoalView(LoginRequiredMixin, RoleRequiredMixin, LogMixin, UpdateView
     model = StrategicGoal
     form_class = StrategicGoalForm
     template_name = 'goal_form.html'
-    success_url = reverse_lazy('goals_list')
+    success_url = reverse_lazy('partials\goals_list.html')
     allowed_roles = ['M', 'CM']  # Roles allowed to access this view
 
     def form_valid(self, form):
@@ -771,7 +777,7 @@ class DeleteGoalView(LoginRequiredMixin, RoleRequiredMixin, LogMixin, DeleteView
     - Redirects to goals list
     '''
     model = StrategicGoal
-    success_url = reverse_lazy('goals_list')
+    success_url = reverse_lazy('partials\goals_list.html')
     allowed_roles = ['M', 'CM']  # Roles allowed to access this view
 
 # ---------------------------
