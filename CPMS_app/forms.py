@@ -9,6 +9,7 @@ class KPIForm(ModelForm):
         model = KPI
         fields = ['kpi', 'unit', 'target_value','actual_value']
 
+# ============== Base Form =================
 # Base form with shared clean and save logic
 class BaseForm(forms.ModelForm):
     def clean(self):
@@ -46,27 +47,6 @@ class StrategicPlanForm(BaseForm):
             'mission': 'الرسالة',
             'start_date': 'تاريخ بداية الخطة',
             'end_date': 'تاريخ نهاية الخطة',
-        }
-        widgets = {
-            'plan_name': forms.TextInput(attrs={
-                'class': 'w-full bg-gray-100 border border-gray-300 rounded-lg p-2.5 focus:bg-white focus:ring-2 focus:ring-blue-500'
-            }),
-            'vision': forms.Textarea(attrs={
-                'class': 'w-full bg-gray-100 border border-gray-300 rounded-lg p-2.5 focus:bg-white focus:ring-2 focus:ring-blue-500',
-                'rows': 3
-            }),
-            'mission': forms.Textarea(attrs={
-                'class': 'w-full bg-gray-100 border border-gray-300 rounded-lg p-2.5 focus:bg-white focus:ring-2 focus:ring-blue-500',
-                'rows': 3
-            }),
-            'start_date': forms.DateInput(attrs={
-                'type': 'date',
-                'class': 'w-full bg-gray-100 border border-gray-300 rounded-lg p-2.5 focus:bg-white focus:ring-2 focus:ring-blue-500'
-            }),
-            'end_date': forms.DateInput(attrs={
-                'type': 'date',
-                'class': 'w-full bg-gray-100 border border-gray-300 rounded-lg p-2.5 focus:bg-white focus:ring-2 focus:ring-blue-500'
-            }),
         }
 
 # ===== Strategic Goal Form =====

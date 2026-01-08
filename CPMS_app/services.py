@@ -33,6 +33,7 @@ def create_log(user, action, instance=None, old_data=None):
 def generate_KPIs(initiative):
     pass
 
+
 def get_plan_dashboard(plan, user):
     role = user.role.role_name
     can_edit = False  # Read only

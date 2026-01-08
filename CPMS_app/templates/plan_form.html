@@ -10,8 +10,7 @@
                 {% if object %}نموذج تعديل خطة{% else %}نموذج إنشاء خطة{% endif %}
             </h1>
 
-            <form method="post" data-edit="{% if object %}true{% else %}false{% endif %}"
-                class="space-y-6">
+            <form method="post" data-edit="{% if object %}true{% else %}false{% endif %}" class="space-y-6">
                 {% csrf_token %}
                 <!--Plan Name-->
                 <div>
@@ -36,8 +35,7 @@
                         الرؤية <span class="text-red-500">*</span>
                     </label>
                     <textarea name="{{ form.vision.name }}" id="{{ form.vision.id_for_label }}" rows="1"
-                        placeholder="ادخل الرؤية ..."
-                        class="block p-2.5 w-full text-sm text-gray-900
+                        placeholder="ادخل الرؤية ..." class="block p-2.5 w-full text-sm text-gray-900
                                bg-gray-50 rounded-xl shadow-sm border border-gray-300
                                focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-500
                                hover:border-gray-400 transition-all duration-200 resize-none">
@@ -55,8 +53,7 @@
                         الرسالة <span class="text-red-500">*</span>
                     </label>
                     <textarea name="{{ form.mission.name }}" id="{{ form.mission.id_for_label }}" rows="1"
-                        placeholder="ادخل الرسالة ..."
-                        class="block p-2.5 w-full text-sm text-gray-900
+                        placeholder="ادخل الرسالة ..." class="block p-2.5 w-full text-sm text-gray-900
                                bg-gray-50 rounded-xl shadow-sm border border-gray-300
                                focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-500
                                hover:border-gray-400 transition-all duration-200 resize-none">
@@ -75,8 +72,8 @@
                     <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
                         <!--Satrt Date-->
                         <input type="date" name="{{ form.start_date.name }}"
-                            value="{% if form.start_date.value %}{{ form.start_date.value|date:'Y-m-d' }}{% endif %}"
-                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm
+                            value="{% if form.start_date.value %}{{ form.start_date.value }}{% endif %}" id="date"
+                            class="bg-gray-50 border border-gray-300 text-gray-800 text-sm
                                    rounded-xl shadow-sm block w-full p-2.5
                                    focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-500
                                    hover:border-gray-400 transition-all duration-200">
@@ -85,8 +82,8 @@
 
                         <!--End Date-->
                         <input type="date" name="{{ form.end_date.name }}"
-                            value="{% if form.end_date.value %}{{ form.end_date.value|date:'Y-m-d' }}{% endif %}" 
-                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm
+                            value="{% if form.end_date.value %}{{ form.end_date.value|date:'Y-m-d' }}{% endif %}"
+                            id="date" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm
                                    rounded-xl shadow-sm block w-full p-2.5
                                    focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-500
                                    hover:border-gray-400 transition-all duration-200">
@@ -96,8 +93,7 @@
                 <!--Buttons container-->
                 <div class="flex gap-4 mt-12">
                     <!-- Create/Update Button-->
-                    <button type="submit"
-                     class="px-6 py-2.5 text-sm font-medium rounded-lg
+                    <button type="submit" class="px-6 py-2.5 text-sm font-medium rounded-lg
                             text-white bg-blue-600 hover:bg-blue-700
                             shadow-md hover:shadow-lg transform hover:-translate-y-0.5
                             transition duration-200 focus:ring-4 focus:ring-blue-200">
@@ -105,8 +101,7 @@
                     </button>
 
                     <!-- Cancel Button-->
-                    <button type="button" onclick="window.history.back()"
-                     class="px-6 py-2.5 text-sm font-medium rounded-lg
+                    <button type="button" onclick="window.history.back()" class="px-6 py-2.5 text-sm font-medium rounded-lg
                             text-gray-800 bg-gray-200 hover:bg-gray-300
                             shadow-md hover:shadow-lg transform hover:-translate-y-0.5
                             transition duration-200 focus:ring-4 focus:ring-gray-200">

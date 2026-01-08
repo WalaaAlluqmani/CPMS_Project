@@ -58,12 +58,12 @@
 
             <div class="bg-white p-4 rounded-lg shadow text-center">
                 <h3 class="font-semibold mb-2">عدد الأهداف</h3>
-                <p class="text-2xl font-bold">{{ plan.goals.count }}</p>
+                <p class="text-2xl font-bold">{{ goals_count }}</p>
             </div>
 
             <div class="bg-white p-4 rounded-lg shadow text-center">
                 <h3 class="font-semibold mb-2">عدد المبادرات</h3>
-                <p class="text-2xl font-bold">{{ plan.initiatives_qs.count }}</p>
+                <p class="text-2xl font-bold">{{ initiatives_count }}</p>
             </div>
 
             <div class="bg-white p-4 rounded-lg shadow">
@@ -213,6 +213,7 @@
                     <tr>
                         <th class="py-3 font-semibold">عنوان الهدف</th>
                         <th class="px-0 py-3 font-semibold">وصف الهدف</th>
+                        <th class="px-0 py-3 font-semibold">الإدارة المسؤولة</th>
                         <th class="px-0 py-3 font-semibold">الحالة</th>
                         <th class="px-0 py-3 font-semibold">الأهمية</th>
                         <th class="px-0 py-3 font-semibold">التاريخ</th>
