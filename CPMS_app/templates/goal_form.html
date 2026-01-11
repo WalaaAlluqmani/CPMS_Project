@@ -17,7 +17,7 @@
                 <div>
                     <label for="{{ form.goal_title.id_for_label }}"
                         class="block mb-2 px-2 text-sm font-semibold text-gray-800">
-                        عنوان الهدف <span class="text-red-500">*</span>
+                        {{ form.goal_title.label}} <span class="text-red-500"> *</span>
                     </label>
                     <input type="text" name="{{ form.goal_title.name }}" value="{{ form.goal_title.value|default:'' }}"
                         placeholder="مثال: تحسين سرعة إنجاز المشاريع التشغيلية." class="bg-gray-50 border border-gray-300 text-gray-900 text-sm
@@ -34,7 +34,7 @@
                 <div>
                     <label for="{{ form.description.id_for_label }}"
                         class="block mb-2 px-2 text-sm font-semibold text-gray-800">
-                        وصف الهدف <span class="text-red-500">*</span>
+                        {{ form.description.label}} <span class="text-red-500">*</span>
                     </label>
                     <textarea name="{{ form.description.name }}" id="{{ form.description.id_for_label }}" rows="5"
                         placeholder="مثال: تطوير آليات متابعة وتنسيق فرق العمل لضمان تنفيذ المشاريع التشغيلية في الوقت المحدد، وتقليل التأخير بنسبة 15% خلال فترة الخطة."
@@ -49,13 +49,13 @@
                     {% endif %}
                 </div>
 
-                <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-14">
+                <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-14 px-2">
 
                     <!--Goal Status-->
                     <div class="flex items-center">
                         <label for="{{ form.goal_status.id_for_label }}"
-                            class="text-sm font-semibold text-gray-800 w-36">
-                           {{form.goal_status.label}}<span class="text-red-500"> *</span>
+                            class="text-sm font-semibold text-gray-800 w-24 ">
+                            {{form.goal_status.label}}<span class="text-red-500"> *</span>
                         </label>
                         {{ form.goal_status }}
                     </div>
@@ -67,8 +67,8 @@
                     <!--Goal Priority-->
                     <div class="flex items-center">
                         <label for="{{ form.goal_priority.id_for_label }}"
-                            class="text-sm font-semibold text-gray-800 w-36">
-                           {{ form.goal_priority.label}}<span class="text-red-500"> *</span>
+                            class="text-sm font-semibold text-gray-800 w-24">
+                            {{ form.goal_priority.label}}<span class="text-red-500"> *</span>
                         </label>
 
                         {{ form.goal_priority }}
@@ -88,13 +88,13 @@
                     <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
                         <!--Satrt Date-->
                         <input type="date" name="{{ form.start_date.name }}"
-                            value="{% if form.start_date.value %}{{ form.start_date.value|date:'Y-m-d' }}{% endif %}"
-                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm
+                            value="{% if form.start_date.value %}{{ form.start_date.value }}{% endif %}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm
                                    rounded-xl shadow-sm block w-full p-2.5
                                    focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-500
                                    hover:border-gray-400 transition-all duration-200">
                         {% if form.start_date.errors %}
-                        <div class="flex items-center gap-1 text-red-600 text-xs mt-1"> ⚠ {{ form.start_date.errors }}</div>
+                        <div class="flex items-center gap-1 text-red-600 text-xs mt-1"> ⚠ {{ form.start_date.errors }}
+                        </div>
                         {% endif %}
 
                         <span class="text-sm font-medium text-gray-600">إلى</span>
@@ -106,7 +106,8 @@
                                    focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-500
                                    hover:border-gray-400 transition-all duration-200">
                         {% if form.end_date.errors %}
-                        <div class="flex items-center gap-1 text-red-600 text-xs mt-1"> ⚠ {{ form.end_date.errors }}</div>
+                        <div class="flex items-center gap-1 text-red-600 text-xs mt-1"> ⚠ {{ form.end_date.errors }}
+                        </div>
                         {% endif %}
                     </div>
                 </div>
@@ -122,7 +123,9 @@
                     </button>
 
                     <!-- Cancel Button-->
-                    <button type="button" onclick="if(document.referrer) { window.location.href = document.referrer; } else { window.history.go(-1); }" class="px-6 py-2.5 text-sm font-medium rounded-lg
+                    <button type="button"
+                        onclick="if(document.referrer) { window.location.href = document.referrer; } else { window.history.go(-1); }"
+                        class="px-6 py-2.5 text-sm font-medium rounded-lg
                             text-gray-800 bg-gray-200 hover:bg-gray-300
                             shadow-md hover:shadow-lg transform hover:-translate-y-0.5
                             transition duration-200 focus:ring-4 focus:ring-gray-200">

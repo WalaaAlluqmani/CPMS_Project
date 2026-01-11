@@ -105,8 +105,8 @@ class StrategicGoalForm(BaseForm):
             'description': forms.Textarea(attrs={'rows': 1, 'class': 'textarea'}),
             'start_date': forms.DateInput(attrs={'type': 'date', 'class': 'input'}),
             'end_date': forms.DateInput(attrs={'type': 'date', 'class': 'input'}),
-            'goal_status': forms.Select(attrs={'class':'rounded-xl border px-6 py-1 text-sm text-gray-900 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-500'}),
-            'goal_priority': forms.Select(attrs={'class':'rounded-xl border px-6 py-1 text-sm text-gray-900 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-500'}),
+            'goal_status': forms.Select(attrs={'class':'rounded-xl border px-12 py-2 text-sm text-gray-900 bg-gray-50 hover:border-gray-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-500'}),
+            'goal_priority': forms.Select(attrs={'class':'rounded-xl border px-12 py-2 text-sm text-gray-900 bg-gray-50 hover:border-gray-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-500'}),
         }
 
 
