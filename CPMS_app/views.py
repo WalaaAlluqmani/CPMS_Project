@@ -423,8 +423,8 @@ class UpdateInitiativeView(LoginRequiredMixin, RoleRequiredMixin, InitiativePerm
     - The strategic goal and assigned users remain unchanged
     '''
     model = Initiative
+    form_class = InitiativeForm
     template_name = 'initiative_form.html'
-    fields = ['title', 'description', 'start_date', 'end_date', 'priority', 'category']
     allowed_roles = ['M', 'CM']
     
     def get_queryset(self):
