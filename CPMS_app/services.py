@@ -113,6 +113,38 @@ def get_plan_dashboard(plan, user):
         'employees_progress': employees_progress
     }
 
+
+
+def generate_KPIs(initiative):
+    pass
+
+
+
+def calc_user_initiative_status(user_initiative):
+    """
+    Calculate the status of a user initiative
+    """
+
+    start_date = user_initiative.initiative.start_date
+    end_date = user_initiative.initiative.end_date
+    progress = user_initiative.progress
+    today = date.today()
+    total_days = max((end_date - start_date).days, 1)
+    days_left = 0 if end_date < today else (end_date - today).days
+    
+    if progress == 100:
+        return 'مكتمل'
+
+    if days_left <= 0.10*total_days: #if the user is in last 10% of the duration, then they're late
+        return 'متأخر'
+    
+    if progress > 0:
+        return 'قيد التنفيذ'
+    
+    return 'لم يبدأ بعد'
+
+
+
 def filter_queryset(queryset, request, search_fields=None, status_field=None, priority_field=None):
 
     search = request.GET.get('search', '').strip()
