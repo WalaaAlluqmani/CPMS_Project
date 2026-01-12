@@ -1,3 +1,4 @@
+from datetime import date
 from django.forms.models import model_to_dict
 from django.db.models import Count, Q, Case, When, Value, IntegerField
 from .models import StrategicGoal, Initiative, Log, UserInitiative
