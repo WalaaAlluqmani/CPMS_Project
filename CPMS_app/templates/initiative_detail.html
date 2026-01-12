@@ -1,75 +1,154 @@
 {% extends 'base.html' %}
 {% block content %}    
 {% include "partials/confirm_delete.html" %}
+<!-- Multiple bars Progress -->
+<div class="flex w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
+    <div class="flex flex-col justify-center overflow-hidden bg-blue-400 text-xs text-white text-center whitespace-nowrap" style="width: 25%" role="progressbar" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+    <div class="flex flex-col justify-center overflow-hidden bg-blue-700 text-xs text-white text-center whitespace-nowrap" style="width: 15%" role="progressbar" aria-valuenow="15" aria-valuemin="0" aria-valuemax="100"></div>
+    <div class="flex flex-col justify-center overflow-hidden bg-gray-800 text-xs text-white text-center whitespace-nowrap" style="width: 30%" role="progressbar" aria-valuenow="30" aria-valuemin="0" aria-valuemax="100"></div>
+    <div class="flex flex-col justify-center overflow-hidden bg-orange-600 text-xs text-white text-center whitespace-nowrap" style="width: 5%" role="progressbar" aria-valuenow="5" aria-valuemin="0" aria-valuemax="100"></div>
+</div>
+<!-- End Multiple bars Progress -->
 
 <!-- ##add notes to general manager -->
-<h1> مبادرة {{ initiative.title }}</h1>
-<ul>
-    <li><strong> الوصف:</strong> <em>{{ initiative.description }}</em></li>
-    <li><strong>تاريخ البداية: </strong> {{ initiative.start_date }}</li>
-    <li><strong>تاريخ النهاية: </strong> {{ initiative.end_date }}</li>
-    <li><strong>الأهمية: </strong> {{ initiative.priority }}</li>
-    <li><strong>التصنيف: </strong> {{ initiative.category }} </li>
-    <li><strong>الهدف الاستراتيجي المرتبط بالمبادرة: </strong> {{ initiative.strategic_goal }}</li>
-    <li>مؤشرات الأداء الرئيسية: 
-        {% if initiative.kpi_set.exists %}
-            <ol>
-                {% for kpi in initiative.kpi_set.all %}
-                    <li data-kpi-id="{{ kpi.id }}" data-initiative-id="{{ initiative.id }}">
-                        {{kpi.kpi}}
-                        {% if user.role.role_name == 'M' or user.role.role_name == 'CM' %} 
-                            <button class="edit-kpi-btn button" 
-                                    data-kpi-id="{{ kpi.id }}"
-                                    data-kpi-name="{{ kpi.kpi }}"
-                                    data-unit="{{ kpi.unit }}"
-                                    data-target="{{ kpi.target_value|default_if_none:'' }}"
-                                    data-actual="{{ kpi.actual_value|default_if_none:'' }}">
-                                تعديل   
-                            </button>
-                            
-                            <button class="button" onclick="openDeleteModal(
-                            '/initiatives/{{ initiative.id }}/kpis/{{ kpi.id }}/delete/',
-                            'هل أنت متأكد أنك تريد حذف هذا المؤشر')">
-                            حذف
-                            </button>
-                        {% endif %}
-                    </li> 
-                {% endfor %}
-            </ol>
-        {% else %}
-            لا يوجد
+<section class="bg-gray-100 py-12" dir="rtl">
+    <div class="max-w-4xl mx-auto bg-white px-6 py-4 rounded-xl space-y-6">
+
+        <div class="bg-gray-200/60 px-4 py-2 rounded-md">
+            <h2 class="text-lg font-semibold text-gray-800">
+                مبادرة {{ initiative.title }}
+            </h2>
+        </div>
+
+        
+        <div>
+            <div class="">
+                <h2></h2>   
+                <div class="relative size-40">
+                    <svg class="size-full rotate-180" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Background Circle (Gauge) -->
+                        <circle cx="18" cy="18" r="16" fill="none" class="stroke-current text-orange-100 " stroke-width="3" stroke-dasharray="50 100" stroke-linecap="round"></circle>
+                        <!-- Gauge Progress -->
+                        <circle cx="18" cy="18" r="16" fill="none" class="stroke-current text-orange-600 " stroke-width="1" stroke-dasharray="{{ avg|floatformat:0 }} 100" stroke-linecap="round"></circle>
+                    </svg>
+
+                    <!-- Value Text -->
+                    <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+                        <span class="text-2xl font-bold text-orange-600">{{ avg|floatformat:0 }}%</span>
+                        <span class="text-xs text-orange-600">مستوى التقدم</span>
+                    </div>
+                </div>
+                <div class="p-2">
+                    <div class="inline-block mb-2 ms-[calc({{ avg|floatformat:0 }}%-20px)] py-0.5 px-1.5 bg-blue-50 border border-blue-200 text-xs font-medium text-blue-600 rounded-lg dark:bg-blue-800/30 dark:border-blue-800 dark:text-blue-500">
+                        {{ avg|floatformat:0 }}%
+                    </div>
+                    <div class="flex w-full min-w-[43rem] h-2 bg-gray-200 rounded-full overflow-hidden dark:bg-neutral-700 mb-6" 
+                        role="progressbar" aria-valuenow="{{ avg|floatformat:0 }}" aria-valuemin="0" aria-valuemax="100">
+                        <div class="flex flex-col justify-center rounded-full overflow-hidden bg-blue-600 text-xs text-white text-center whitespace-nowrap transition-all duration-500 dark:bg-blue-500" 
+                            style="width: {{ avg|floatformat:0 }}%">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <ul>
+            <li><strong> الوصف:</strong> <em>{{ initiative.description }}</em></li>
+            <li><strong>تاريخ البداية: </strong> {{ initiative.start_date }}</li>
+            <li><strong>تاريخ النهاية: </strong> {{ initiative.end_date }}</li>
+            <li><strong>الأهمية: </strong> {{ initiative.get_priority_display }}</li>
+            <li><strong>التصنيف: </strong> {{ initiative.category }} </li>
+            <li><strong>الهدف الاستراتيجي المرتبط بالمبادرة: </strong> {{ initiative.strategic_goal }}</li>
+            <li>مؤشرات الأداء الرئيسية: 
+                {% if initiative.kpi_set.exists %}
+                    <ol>
+                        {% for kpi in initiative.kpi_set.all %}
+                            <li data-kpi-id="{{ kpi.id }}" data-initiative-id="{{ initiative.id }}">
+                                {{kpi.kpi}}
+                                {% if user.role.role_name == 'M' or user.role.role_name == 'CM' %} 
+                                    <button class="edit-kpi-btn button" 
+                                            data-kpi-id="{{ kpi.id }}"
+                                            data-kpi-name="{{ kpi.kpi }}"
+                                            data-unit="{{ kpi.unit }}"
+                                            data-target="{{ kpi.target_value|default_if_none:'' }}"
+                                            data-actual="{{ kpi.actual_value|default_if_none:'' }}">
+                                        تعديل   
+                                    </button>
+                                    
+                                    <button class="button" onclick="openDeleteModal(
+                                    '/initiatives/{{ initiative.id }}/kpis/{{ kpi.id }}/delete/',
+                                    'هل أنت متأكد أنك تريد حذف هذا المؤشر')">
+                                    حذف
+                                    </button>
+                                {% endif %}
+                            </li> 
+                        {% endfor %}
+                    </ol>
+                {% else %}
+                    لا يوجد
+                {% endif %}
+            </li>
+        </ul>
+
+        {% if user.role.role_name == 'M' or user.role.role_name == 'CM' %} <!-- add working employees if needed -->
+            <table class="w-full border-collapse text-sm">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <td class="px-4 py-2 text-right">الموظف</td>
+                        <td class="px-4 py-2 text-right">الحالة</td>
+                        <td class="px-4 py-2 text-right">التقدم</td>
+                    </tr>
+                </thead>
+                <tbody>                        
+                    {% for employee, progress, status, color in employee_progress %}
+                        <tr class="border-b border-gray-200">
+                            <td class="px-4 py-2 text-right">{{employee.get_full_name}}</td>
+                            <td class="px-4 py-2 text-right">{{status}}</td>
+                            <td>
+                                <div class="flex w-full h-2 bg-gray-200 rounded-full overflow-hidden " role="progressbar" aria-valuenow="{{progress}}" aria-valuemin="0" aria-valuemax="100">
+                                    <div class="flex flex-col justify-center rounded-full overflow-hidden {{color}} text-xs text-white text-center whitespace-nowrap transition duration-500" style="width: {{progress}}%"></div>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <button class="button" onclick="window.open(
+            '/initiatives/{{initiative.id}}/update/','_blank');">
+                تعديل
+            </button>
+
+            <button
+                class="button"
+                onclick="openDeleteModal(
+                    '/initiatives/{{ initiative.id }}/delete/',
+                    'هل أنت متأكد أنك تريد حذف هذه المبادرة؟'
+                )">
+                حذف
+            </button>
+
+            <button id="add_kpi_button" class="button" data-initiative-id="{{ initiative.id }}" data-initiative-title="{{ initiative.title }}">
+            إضافة مؤشر أداء رئيسي
+            </button>
+
+            <button class = "assign_employee_button button"> <!-- ##error handling -->
+                تعيين موظفين
+            </button>
         {% endif %}
-    </li>
-</ul>
+        {% include "partials/assign_employee.html" %}
+        {% include "partials/kpi_modal.html" %}
 
-{% if user.role.role_name == 'M' or user.role.role_name == 'CM' %} <!-- add working employees if needed -->
-    <button class="button" onclick="window.open(
-    '/initiatives/{{initiative.id}}/update/','_blank');">
-        تعديل
-    </button>
+        {% if user.role.role_name != 'GM' %} <!-- managers and employees can send initiative-level notes -->
+            <button class="button" onclick="openWindow('/notes/create')">أرسل ملاحظة</button>
+            {% if user.role.role_name == 'E' %}
+            <h1>add progress </h1>
+            {% endif %}
+        {% endif %}
+        
 
-    <button
-        class="button"
-        onclick="openDeleteModal(
-            '/initiatives/{{ initiative.id }}/delete/',
-            'هل أنت متأكد أنك تريد حذف هذه المبادرة؟'
-        )">
-        حذف
-    </button>
-
-    <button id="add_kpi_button" class="button" data-initiative-id="{{ initiative.id }}" data-initiative-title="{{ initiative.title }}">
-    إضافة مؤشر أداء رئيسي
-    </button>
-
-    <button class = "assign_employee_button button"> <!-- ##error handling -->
-        تعيين موظفين
-    </button>
-{% endif %}
-{% include "partials/assign_employee.html" %}
-{% include "partials/kpi_modal.html" %}
-
-{% if user.role.role_name != 'GM' %} <!-- managers and employees can send initiative-level notes -->
-    <button class="button" onclick="openWindow('/notes/create')">أرسل ملاحظة</button>
-{% endif %}
+        
+    </div>
+</section>
 
 {% endblock %}
