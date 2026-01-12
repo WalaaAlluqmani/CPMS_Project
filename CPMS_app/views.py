@@ -1,4 +1,3 @@
-from django.contrib import messages
 from django.utils import timezone
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy, reverse
@@ -7,6 +6,10 @@ from django.views.generic.edit import UpdateView, DeleteView
 from django.http import JsonResponse
 from django.forms import ModelForm
 from django.forms.models import model_to_dict  
+from django.template.loader import render_to_string
+from django.db.models import Q, Case, When, Value, IntegerField
+from django.db.models import Avg
+from django.contrib import messages
 from django.contrib.auth import login, get_user_model
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin #class based view 
@@ -15,11 +18,8 @@ from django.core.exceptions import PermissionDenied
 from functools import wraps
 from .models import ( Role, Department, User, StrategicPlan, StrategicGoal, 
                         Initiative, UserInitiative, KPI, Note, Log, STATUS)
-from .services import generate_KPIs,  create_log, get_plan_dashboard
+from .services import generate_KPIs,  create_log, get_plan_dashboard, calc_user_initiative_status
 from .forms import InitiativeForm, KPIForm, StrategicGoalForm, StrategicPlanForm
-from django.template.loader import render_to_string
-from django.db.models import Q, Case, When, Value, IntegerField
-
 
 
 
@@ -328,6 +328,7 @@ class AllInitiativeView(LoginRequiredMixin, InitiativePermissionMixin, ListView)
         return super().render_to_response(context, **response_kwargs)
 
 
+
 class InitiativeDetailsView(LoginRequiredMixin, InitiativePermissionMixin, DetailView):
     '''
     - Shows details of a single initiative
@@ -339,20 +340,34 @@ class InitiativeDetailsView(LoginRequiredMixin, InitiativePermissionMixin, Detai
         context = super().get_context_data(**kwargs) 
         user = self.request.user 
         initiative = self.get_object() 
-        
+        avg_progress = UserInitiative.objects.filter( initiative = initiative, user__role__role_name='E').aggregate ( avg = Avg('progress')) ['avg']
+
+        employees = User.objects.filter(role__role_name='E', department=user.department, userinitiative__initiative=initiative).distinct()         
+        employee_progress = []
+        for emp in employees:
+            ui = UserInitiative.objects.filter(user=emp, initiative=initiative).first()
+            if ui:
+                status = calc_user_initiative_status(ui)
+                employee_progress.append([ emp, ui.progress, status, 'bg-red-500' if status == 'متأخر' else 'bg-teal-500'])
+            else:
+                employee_progress.append([emp, 0, 'NS','gray'])
+
         if user.role.role_name in ['M', 'CM'] and initiative.strategic_goal.department == user.department: 
-            employees = User.objects.filter(role__role_name='E', department=user.department) 
-            assigned_employee_ids = set( 
-                                        UserInitiative.objects.filter(initiative=initiative)
-                                        .values_list('user_id', flat=True) ) 
-            
+
+            context['employee_progress'] = employee_progress
+            assigned_employee_ids = set( UserInitiative.objects.filter(initiative=initiative).values_list('user_id', flat=True) ) 
             context['employees'] = employees 
             context['assigned_employee_ids'] = assigned_employee_ids 
             context['form'] = KPIForm()
+            context ['avg'] = round(avg_progress or 0)
+
         else:
+            context['employee_progress'] = employee_progress
             context['employees'] = [] 
             context['assigned_employee_ids'] = set() 
-        
+            context ['avg'] = round(avg_progress or 0)
+
+
         return context
 
 
