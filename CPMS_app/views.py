@@ -3,7 +3,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy, reverse
 from django.views.generic import ListView, DetailView, CreateView
 from django.views.generic.edit import UpdateView, DeleteView
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.forms import ModelForm
 from django.forms.models import model_to_dict  
 from django.template.loader import render_to_string
@@ -17,11 +17,11 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin #
 from django.contrib.auth.decorators import login_required, user_passes_test #function based view
 from django.core.exceptions import PermissionDenied
 from functools import wraps
-from .models import ( Role, Department, User, StrategicPlan, StrategicGoal,
-                        Initiative, UserInitiative, KPI, Note, Log, STATUS)
+from .models import ( STATUS, Role, Department, User, StrategicPlan, StrategicGoal,
+                        Initiative, UserInitiative, KPI, Note, Log)
 from .services import generate_KPIs,  create_log, get_plan_dashboard, calc_user_initiative_status
 from .services import generate_KPIs,  create_log, get_plan_dashboard, filter_queryset, get_page_numbers, paginate_queryset
-from .forms import InitiativeForm, KPIForm, StrategicGoalForm, StrategicPlanForm
+from .forms import InitiativeForm, KPIForm, NoteForm, StrategicGoalForm, StrategicPlanForm
 
 
 
@@ -952,18 +952,77 @@ class AllNotesView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         user = self.request.user
         role = user.role.role_name
-
+        note_box = self.request.GET.get('box', 'all-notes')
+        filter_val = self.request.GET.get("filter")
+    
         if role == 'GM':
             # All notes sent by the General Manager
-            return Note.objects.filter(user=user)
+            qs = Note.objects.filter(sender=user)
         elif role in ['M','CM']:
             # All notes sent by the user and those received from the General Manager
-            return Note.objects.filter(user=user,department=user.department)
+            # return Note.objects.filter(user=user,department=user.department)
+              qs = Note.objects.filter(sender=user) | Note.objects.filter(receiver=user) |Note.objects.filter(receiver__department=user.department)
         elif role == 'E':
             # All notes sent by the user and those received for the same initiative or sent to them by the manager
-            return Note.objects.filter(user=user,initiative__userinitiative__user=user,department=user.department).distinct()
+            qs = Note.objects.filter(sender=user)| Note.objects.filter(receiver=user) | Note.objects.filter(initiative__userinitiative__user=user).distinct()
+        
+        if note_box == 'received-notes':
+            qs = qs.filter(receiver=user)
+        if note_box == 'sent-notes':
+            qs = qs.filter(sender=user)
+        if note_box == 'starred-notes':
+            qs = qs.filter(is_starred=True)
+        if filter_val == "read":
+            qs = qs.filter(note_status='R')
+        if filter_val == "starred":
+            qs = qs.filter(is_starred=True)
+        if filter_val == "unread":
+            qs = qs.filter(note_status='U')
+        if filter_val == "unstarred":
+            qs = qs.filter(is_starred=False)
 
-        return Note.objects.none()
+
+        queryset = filter_queryset(
+          queryset=qs,
+          request=self.request,
+          search_fields=['title','content','sender__first_name','sender__last_name'],
+          status_field=None,
+          priority_field=None
+        )
+
+        return queryset.order_by('-created_at')
+    
+    def post(self, request, *args, **kwargs):
+        # HTMX star toggle
+        if request.headers.get("HX-Request"):
+            note_id = request.POST.get("note_id")
+            note = get_object_or_404(Note, id=note_id)
+
+            note.is_starred = not note.is_starred
+            note.save()
+
+            return render(request, "partials/star_icon.html", {
+                "note": note
+            })
+
+        return super().get(request, *args, **kwargs)
+
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+
+        #unread notes
+        unread_count = Note.objects.filter(receiver=user, note_status='U').count()
+        context['unread_count'] = unread_count
+        return context
+    
+    def render_to_response(self, context, **response_kwargs):
+      if self.request.headers.get("HX-Request"):
+        return render(self.request, "partials/notes_table_rows.html" )
+      
+      return super().render_to_response(context, **response_kwargs)
+
 
 
 class NoteDetailsview(LoginRequiredMixin, DetailView):
@@ -971,8 +1030,24 @@ class NoteDetailsview(LoginRequiredMixin, DetailView):
     - Shows details of a single note
     '''
     model = Note
-    template_name = 'note_detail.html'
+    template_name = 'partials/note_detail.html'
     context_object_name = 'note'
+
+    def get_object(self, queryset=None):
+        note = super().get_object(queryset)
+        
+        if note.note_status == 'U' and note.receiver == self.request.user:
+            note.note_status = 'R'
+            note.save()
+        return note
+    
+    def post(self, request, *args, **kwargs):
+        if request.headers.get("HX-Request"):
+            unread_count = Note.objects.filter(receiver=request.user, note_status='U').count()
+            html = f'<span id="unread-badge" class="ml-2 text-sm font-semibold text-red-500">{unread_count}</span>'
+            return HttpResponse(html)
+        
+        return super().get(request, *args, **kwargs)
 
 
 class CreateNoteView(LoginRequiredMixin, LogMixin, CreateView):
@@ -982,7 +1057,7 @@ class CreateNoteView(LoginRequiredMixin, LogMixin, CreateView):
     - Receiver options filtered based on sender's role
     '''
     model = Note
-    fields = ['content', 'initiative', 'department', 'receiver']
+    form_class = NoteForm 
     template_name = 'note_form.html'
     success_url = reverse_lazy('notes_list')
 
@@ -1004,7 +1079,7 @@ class CreateNoteView(LoginRequiredMixin, LogMixin, CreateView):
         return form
 
     def form_valid(self, form):
-        form.instance.sender = self.request.user
+        self.object = form.save(sender=self.request.user)
         messages.success(self.request, "تمت إضافة الملاحظة بنجاح", extra_tags="create")
         return super().form_valid(form)
 
@@ -1030,7 +1105,7 @@ class UpdateNoteView(LoginRequiredMixin, LogMixin, UpdateView):
         return qs
 
     def form_valid(self, form):
-        form.instance.sender = self.request.user
+        self.object = form.save(user=self.request.user)
         messages.success(self.request, "تم تحديث الملاحظة بنجاح", extra_tags="update")
         return super().form_valid(form)
 

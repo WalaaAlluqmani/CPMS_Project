@@ -1,6 +1,6 @@
 from django import forms
 from django.forms import ModelForm
-from .models import Initiative, KPI, StrategicPlan, StrategicGoal
+from .models import Initiative, KPI, Note, StrategicPlan, StrategicGoal
 
 # ============== Base Form =================
 # Base form with shared clean and save logic
@@ -14,7 +14,7 @@ class BaseForm(forms.ModelForm):
 
         return cleaned_data
 
-    def save(self, user=None, plan_id=None, commit=True):
+    def save(self, user=None, sender=None, plan_id=None, commit=True):
         obj = super().save(commit=False)
 
         if user and hasattr(obj, 'created_by'):
@@ -26,10 +26,12 @@ class BaseForm(forms.ModelForm):
         if plan_id and hasattr(obj, 'strategicplan_id'):
             obj.strategicplan_id = plan_id
 
+        if sender:
+            obj.sender = sender
+
         if commit:
             obj.save()
         return obj
-
 
 
 # ===== Strategic Plan Form =====
@@ -110,6 +112,17 @@ class StrategicGoalForm(BaseForm):
             'goal_priority': forms.Select(attrs={'class':'rounded-xl border px-12 py-2 text-sm text-gray-900 bg-gray-50 hover:border-gray-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-500'}),
         }
 
+
+# ===== Note Form =====
+class NoteForm(BaseForm):
+    class Meta:
+        model = Note
+        fields = ['title', 'content', 'receiver']
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'border rounded px-2 py-1 w-full', 'placeholder': 'اكتب عنوان الملاحظة...'}),
+            'content': forms.Textarea(attrs={'class': 'border rounded px-2 py-1 w-full', 'rows':3}),
+            'receiver': forms.Select(attrs={'class': 'border rounded px-2 py-1 w-full'})
+        }
 
 # ===== KPI Form =====
 class KPIForm(BaseForm):

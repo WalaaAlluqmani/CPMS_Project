@@ -4,7 +4,7 @@
 
 const params = "scrollbars=no,resizable=no,status=no,location=no,toolbar=no,menubar=no,width=400,height=300,left=100,top=100";
 
-function openWindow(url){
+function openWindow(url) {
 
     window.open(
         url,        //url to open
@@ -14,12 +14,12 @@ function openWindow(url){
 }
 
 
-function openPopup(id){
+function openPopup(id) {
     document.getElementById(id).classList.remove('hidden');
 }
 
 
-function closePopup(id){
+function closePopup(id) {
     document.getElementById(id).classList.add('hidden');
 }
 
@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', function () {
 // --------------------------------------
 //       js for search & filter buttons    
 // --------------------------------------
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", function () {
 
     // Detect which table exists
     const plansBody = document.getElementById("plansBody");
@@ -107,7 +107,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
     filterButtons.forEach(btn => {
-        btn.addEventListener("click", function() {
+        btn.addEventListener("click", function () {
             currentFilter = this.dataset.status || this.dataset.priority || "";
             fetchData(searchInput.value, currentFilter);
             if (dropdownMenu) {
@@ -124,7 +124,7 @@ document.addEventListener("DOMContentLoaded", function() {
 // ---------------------------
 //  initiative page number js     
 // ---------------------------
-document.addEventListener('DOMContentLoaded', function(){
+document.addEventListener('DOMContentLoaded', function () {
     const pageDropdownButton = document.getElementById('initiative-page-dropdown-button'); //button that has the word عدد الصفوف
     const pageDropdownIcon = document.getElementById('initiative-page-dropdown-icon'); //icon to be rotated
     const pageDropdown = document.getElementById('initiative-page-dropdown'); //the div to be not hidden
@@ -134,7 +134,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
 
 
-    if (currentUrl.searchParams.get('per_page')){
+    if (currentUrl.searchParams.get('per_page')) {
         pageDropdownText.textContent = currentUrl.searchParams.get('per_page')
     }
     if (pageDropdownButton) {
@@ -157,9 +157,9 @@ document.addEventListener('DOMContentLoaded', function(){
 
 
     pageFilterButtons.forEach(btn => {
-        btn.addEventListener("click", function() {
+        btn.addEventListener("click", function () {
             const perPage = this.dataset.number;
-            
+
             if (pageDropdown) {
                 pageDropdown.classList.add("hidden");
                 pageDropdownIcon.style.transform = "rotate(0deg)";
@@ -241,11 +241,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     "X-Requested-With": "XMLHttpRequest"
                 }
             })
-            .then(res => res.json())
-            .then(data => {
-                if (isPlansPage) plansBody.innerHTML = data.html;
-                if (isPlanDetailsPage) goalsBody.innerHTML = data.html;
-            });
+                .then(res => res.json())
+                .then(data => {
+                    if (isPlansPage) plansBody.innerHTML = data.html;
+                    if (isPlanDetailsPage) goalsBody.innerHTML = data.html;
+                });
         });
     });
 
@@ -258,8 +258,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
 function openDeleteModal(deleteUrl, message) {
     const modal = document.getElementById('deleteModal');
-    const form  = document.getElementById('deleteModalForm');
-    const text  = document.getElementById('deleteModalText');
+    const form = document.getElementById('deleteModalForm');
+    const text = document.getElementById('deleteModalText');
 
     form.action = deleteUrl;
     text.textContent = message;
@@ -277,10 +277,10 @@ function closeDeleteModal() {
 //    assign employees js     
 // ---------------------------
 
-const toAdd = new Map();    
-const toRemove = new Map(); 
+const toAdd = new Map();
+const toRemove = new Map();
 
-document.querySelectorAll('.assign_employee_button').forEach(btn => { 
+document.querySelectorAll('.assign_employee_button').forEach(btn => {
     btn.addEventListener('click', () => {
         openPopup('assign_employee');
     });
@@ -359,7 +359,7 @@ document.getElementById('cancel-btn').addEventListener('click', () => {
 });
 
 
-document.getElementById('confirmAssign').addEventListener('click', function() {
+document.getElementById('confirmAssign').addEventListener('click', function () {
     const hiddenContainer = document.getElementById('hidden-inputs');
     hiddenContainer.innerHTML = ''; // clear inputs
 
@@ -376,7 +376,7 @@ document.getElementById('confirmAssign').addEventListener('click', function() {
         const input = document.createElement('input');
         input.type = 'hidden';
         input.name = 'to_remove[]';
-        input.value = id;  
+        input.value = id;
         hiddenContainer.appendChild(input);
     });
 
@@ -394,7 +394,6 @@ function closeAssignPopup() {
 }
 
 
-
 // ---------------------------
 //           KPI js     
 // ---------------------------
@@ -406,7 +405,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('kpiForm');
     const initiativeId = addKpiBtn.dataset.initiativeId
     const initiativeTitle = addKpiBtn.dataset.initiativeTitle
-    
+
 
     //  Add Kpi Button JS
     addKpiBtn.addEventListener('click', () => {
@@ -444,3 +443,8 @@ document.addEventListener('DOMContentLoaded', () => {
         form.reset();
     });
 });
+
+
+// ---------------------------
+//           note-row js     
+// ---------------------------

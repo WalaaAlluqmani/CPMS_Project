@@ -1,0 +1,95 @@
+{% for note in notes %}
+<tr class="note-row group cursor-pointer hover:bg-gray-50" data-id="{{ note.id }}">
+    <td class="p-2 w-1/4">
+        <div class="flex items-center gap-2 truncate">
+            <!-- Star icon -->
+            {% include "partials/star_icon.html" with note=note %}
+            <!-- User Name -->
+            <span
+                class="truncate {% if note.note_status == 'U' %}font-semibold{% else %}font-normal{% endif %} text-gray-800">
+                {{ note.sender.get_full_name }}
+            </span>
+        </div>
+    </td>
+
+    <td class="p-2 w-2/3">
+        <div class="flex items-center gap-3 truncate">
+            <!-- Title -->
+            <span
+                class="truncate {% if note.note_status == 'U' %}font-semibold{% else %}font-normal{% endif %} text-gray-800">
+                {{ note.title }}
+                <span> - </span>
+            </span>
+
+            <!-- Content -->
+            <span
+                class="truncate text-gray-500 {% if note.note_status == 'U' %}font-semibold{% else %}font-normal{% endif %}">
+                {{ note.content|truncatechars:50 }}
+            </span>
+        </div>
+    </td>
+
+    <!-- Send Date -->
+    <td
+        class="text-sm text-gray-600 font-normal {% if note.note_status == 'U' %}font-semibold{% else %}font-normal{% endif %}">
+
+        {{ note.created_at|date:"Y/m/d" }}
+
+    </td>
+    <td class="p-2 text-center w-1/2">
+        {% if note.note_status == 'U'%}
+        <!-- <span class="w-2 h-2 bg-blue-400 rounded-full inline-block
+                   shadow-sm ring-1 ring-blue-300"></span>  -->
+        <!-- <span
+                    class="inline-block  w-1.5 h-1.5 me-1 bg-blue-700 rounded-full shadow-sm ring-1 ring-blue-500"></span> -->
+
+        <span class="inline-flex items-center bg-blue-100 border border-blue-300 text-blue-700
+                  text-[10px] font-medium px-2.5  rounded">
+            <span class="w-1.5 h-1.5 me-1 bg-blue-600 rounded-full"></span>
+            جديد!
+        </span>
+
+
+
+        {% endif %}
+    </td>
+</tr>
+
+{% empty %}
+
+<tr>
+    <td colspan="4" class="p-10 h-[50vh]">
+        <div class="flex flex-col items-center justify-center gap-4 text-gray-400">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-20 h-20 text-gray-300">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                <path
+                    d="M8 4h10a2 2 0 0 1 2 2v10m-.593 3.422a2 2 0 0 1 -1.407 .578h-12a2 2 0 0 1 -2 -2v-12c0 -.554 .225 -1.056 .59 -1.418" />
+                <path d="M4 13h3l3 3h4l.987 -.987m2.013 -2.013h3" />
+                <path d="M3 3l18 18" />
+            </svg>
+            {% if current_box == 'sent-notes' %}
+            <span class="text-sm font-semibold">
+                لم ترسل أي ملاحظات بعد
+            </span>
+            {% elif current_box == 'received-notes' %}
+            <span class="text-sm font-semibold">
+                لا توجد ملاحظات واردة
+            </span>
+            {% elif current_box == 'starred-notes' %}
+            <span class="text-sm font-semibold">
+                لا توجد ملاحظات مميزة
+            </span>
+            {% elif current_box == 'all-notes' %}
+            <span class="text-sm font-semibold">
+                لا توجد ملاحظات لعرضها
+            </span>
+            {% else %}
+            <span class="text-sm font-semibold">
+                لا توجد نتائج مطابقة للبحث
+            </span>
+            {% endif %}
+        </div>
+    </td>
+</tr>
+{% endfor %}

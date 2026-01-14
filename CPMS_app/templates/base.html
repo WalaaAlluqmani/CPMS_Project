@@ -13,6 +13,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- APP JS -->
     <script defer src="{% static 'CPMS_app/app.js' %}"></script>
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+
 
 </head>
 
@@ -25,7 +28,7 @@
         <div class="flex">
             <a href="{% url 'initiatives_list' %}" class="nav-items">Initiatives</a>
             <a href="{% url 'plans_list' %}" class="nav-items">Plans</a>
-            <a href="{% url 'goals_list' %}" class="nav-items">Goals</a>
+            <a href="{% url 'notes_list' %}" class="nav-items">Notes</a>
             <a href="{% url 'login' %}">Log In</a>
         </div>
     </nav>
@@ -52,25 +55,26 @@
 
         {% endfor %}
     </div>
-<style>
-    .toast-message {
-        transform: translateY(-20px);
-        opacity: 0;
-        animation: slide-in 0.5s forwards, fade-out 0.5s 2.5s forwards;
-    }
-    
-    @keyframes slide-in {
-        to {
-            transform: translateY(0);
-            opacity: 1;
-        }
-    }
-    
-    @keyframes fade-out {
-        to {
+    <style>
+        .toast-message {
+            transform: translateY(-20px);
             opacity: 0;
+            animation: slide-in 0.5s forwards, fade-out 0.5s 2.5s forwards;
         }
-    }</style>
+
+        @keyframes slide-in {
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fade-out {
+            to {
+                opacity: 0;
+            }
+        }
+    </style>
     <script>
         setTimeout(() => {
             const container = document.getElementById("django-messages");
