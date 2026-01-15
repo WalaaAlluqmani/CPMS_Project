@@ -21,7 +21,7 @@ class BaseForm(forms.ModelForm):
             obj.created_by = user.get_full_name()
 
         if user:
-           obj.department = user.department
+            obj.department = user.department
 
         if plan_id and hasattr(obj, 'strategicplan_id'):
             obj.strategicplan_id = plan_id
