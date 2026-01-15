@@ -2,8 +2,9 @@
 //          popoup js       
 // ---------------------------
 
-const params = "scrollbars=no,resizable=no,status=no,location=no,toolbar=no,menubar=no,width=400,height=300,left=100,top=100";
 
+function openWindow(url){
+    const params = "scrollbars=no,resizable=no,status=no,location=no,toolbar=no,menubar=no,width=400,height=300,left=100,top=100";
 function openWindow(url) {
 
     window.open(
@@ -324,54 +325,74 @@ document.querySelectorAll('.remove-btn').forEach(btn => {
     });
 });
 
+const doneBtn = document.getElementById('done-btn');
+if (doneBtn) {
+    doneBtn.addEventListener('click', () => {
+        if (toAdd.size === 0 && toRemove.size === 0) {
+            alert("لا توجد تغيرات");
+            return;
+        }
 
-document.getElementById('done-btn').addEventListener('click', () => {
-    if (toAdd.size === 0 && toRemove.size === 0) {
-        alert("لا توجد تغيرات");
-        return;
-    }
+        let text = '';
+        if (toAdd.size) text += 'تم تعيين: \n' + Array.from(toAdd.values()).join(', ') + '\n\n';
+        if (toRemove.size) text += 'تم إلغاء تعيين: \n' + Array.from(toRemove.values()).join(', ');
 
-    let text = '';
-    if (toAdd.size) text += 'تم تعيين: \n' + Array.from(toAdd.values()).join(', ') + '\n\n';
-    if (toRemove.size) text += 'تم إلغاء تعيين: \n' + Array.from(toRemove.values()).join(', ');
-
-    document.getElementById('popup-text').textContent = text;
-    openPopup('confirm-popup');
-});
-
-
-document.getElementById('cancel-btn').addEventListener('click', () => {
-    toAdd.clear();
-    toRemove.clear();
-
-    document.querySelectorAll('.add-btn').forEach(btn => {
-        const wasAssigned = btn.dataset.assigned === 'true';
-        btn.disabled = wasAssigned;
+        document.getElementById('popup-text').textContent = text;
+        openPopup('confirm-popup');
     });
+}
 
-    document.querySelectorAll('.remove-btn').forEach(btn => {
-        const wasAssigned = btn.dataset.assigned === 'true';
-        btn.disabled = !wasAssigned;
+
+const cancelBtn = document.getElementById('cancel-btn');
+if (cancelBtn) {
+
+    cancelBtn.addEventListener('click', () => {
+        toAdd.clear();
+        toRemove.clear();
+
+        document.querySelectorAll('.add-btn').forEach(btn => {
+            const wasAssigned = btn.dataset.assigned === 'true';
+            btn.disabled = wasAssigned;
+        });
+
+        document.querySelectorAll('.remove-btn').forEach(btn => {
+            const wasAssigned = btn.dataset.assigned === 'true';
+            btn.disabled = !wasAssigned;
+        });
+
+        closePopup('assign_employee');
+        closePopup('confirm-popup');
     });
-
-    closePopup('assign_employee');
-    closePopup('confirm-popup');
-});
+}
 
 
+const confirmAssignBtn = document.getElementById('confirmAssign');
+if (confirmAssignBtn){
+    confirmAssignBtn.addEventListener('click', function() {
+        const hiddenContainer = document.getElementById('hidden-inputs');
+        hiddenContainer.innerHTML = ''; // clear inputs
 document.getElementById('confirmAssign').addEventListener('click', function () {
     const hiddenContainer = document.getElementById('hidden-inputs');
     hiddenContainer.innerHTML = ''; // clear inputs
 
-    toAdd.forEach((name, id) => {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'to_add[]';
-        input.value = id;  //id
-        hiddenContainer.appendChild(input);
+        toAdd.forEach((name, id) => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'to_add[]';
+            input.value = id;  //id
+            hiddenContainer.appendChild(input);
+        });
+
+        toRemove.forEach((name, id) => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'to_remove[]';
+            input.value = id;  
+            hiddenContainer.appendChild(input);
+        });
+        document.getElementById('assignForm').submit(); 
     });
-
-
+}
     toRemove.forEach((name, id) => {
         const input = document.createElement('input');
         input.type = 'hidden';
@@ -397,6 +418,63 @@ function closeAssignPopup() {
 // ---------------------------
 //           KPI js     
 // ---------------------------
+document.querySelectorAll('.edit-kpi-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        e.preventDefault(); // don't follow href
+
+        const kpiId = btn.dataset.kpiId;
+        const initiativeId = btn.dataset.initiativeId;
+
+        const form = document.getElementById('kpiForm');
+        const title = document.getElementById('kpi-modal-title');
+
+        // Update modal title
+        title.textContent = ' تعديل مؤشر ' + btn.dataset.kpiName;
+
+        // Set form action to update URL
+        form.action = '/initiatives/' + initiativeId + '/kpis/' + kpiId + '/edit/';
+
+        // Pre-fill the form fields
+        form.kpi.value = btn.dataset.kpiName;
+        form.unit.value = btn.dataset.unit;
+        form.target_value.valueAsNumber = parseFloat(btn.dataset.target) || 0;
+        form.actual_value.valueAsNumber = parseFloat(btn.dataset.actual) || 0;
+
+        // Mark form as update
+        form.dataset.isUpdate = "true";
+
+        // Show modal
+        document.getElementById('kpi-modal').classList.remove('hidden');
+        
+    });
+
+
+});
+
+const addKpiBtn = document.getElementById('add_kpi_button');
+if (addKpiBtn){
+    addKpiBtn.addEventListener('click', () => {
+        const form = document.getElementById('kpiForm');
+        const title = document.getElementById('kpi-modal-title');
+
+        form.reset(); // clear any old values from previous update
+        delete form.dataset.isUpdate; // remove update flag
+        title.textContent = 'إضافة مؤشر أداء رئيسي لمبادرة ' + addKpiBtn.dataset.initiativeTitle;
+
+        // set form action to create KPI
+        const initiativeId = addKpiBtn.dataset.initiativeId;
+        form.action = '/initiatives/' + initiativeId + '/kpis/add/';
+
+        // show modal
+        document.getElementById('kpi-modal').classList.remove('hidden');
+    });
+
+}
+
+const cancelBtnKpi = document.getElementById('cancel-btn-kpi')
+if (cancelBtnKpi){
+    document.getElementById('cancel-btn-kpi').addEventListener('click', () => {
+        const form = document.getElementById('kpiForm');
 document.addEventListener('DOMContentLoaded', () => {
 
     const addKpiBtn = document.getElementById('add_kpi_button')
@@ -441,6 +519,65 @@ document.addEventListener('DOMContentLoaded', () => {
 
         closePopup('kpi-modal');
         form.reset();
+        document.getElementById('kpi-modal').classList.add('hidden');
+    });
+
+}
+
+
+
+
+// ---------------------------
+//     circle animation js     
+// ---------------------------
+window.addEventListener('load', () => {
+    const gauge = document.getElementById('gauge');
+    const gaugeText = document.getElementById('gauge-text');
+    
+    if (!gauge || !gaugeText) return;
+    const targetValue = parseFloat(gauge.getAttribute('data-value')) || 0;
+    const avg = parseInt(targetValue)*2
+
+    gauge.setAttribute('stroke-dasharray', targetValue + ' 100');
+
+    let current = 0;
+    const step = avg / 50; // 50 frames ~ 1s
+    const interval = setInterval(() => {
+        current += step;
+        if(current >= avg){
+            current = avg;
+            clearInterval(interval);
+        }
+        gaugeText.textContent = Math.round(current) + '%';
+    }, 20);
+});
+
+
+
+// ---------------------------
+//     add progress  js     
+// ---------------------------
+
+function addProgress(button) {
+    const form = document.getElementById('userInitiativeForm');
+    const progressInput = form.querySelector('.progress-input');
+
+    const initiativeId = button.dataset.initiativeId;
+    const currentProgress = button.dataset.currentProgress;
+
+    form.action = '/initiatives/' + initiativeId + '/add_progress/';
+    progressInput.value = currentProgress;
+
+    openPopup('user-initiative-modal');
+}
+
+function closeProgressModal() {
+    const form = document.getElementById('userInitiativeForm');
+    form.reset();
+
+    closePopup('user-initiative-modal')
+}
+
     });
 });
 
