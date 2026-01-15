@@ -1,62 +1,46 @@
 {% for note in notes %}
 <tr class="note-row group cursor-pointer hover:bg-gray-50" data-id="{{ note.id }}">
-    <td class="p-2 w-1/4">
-        <div class="flex items-center gap-2 truncate">
-            <!-- Star icon -->
+    <!-- Sender -->
+    <td class="p-2 w-1/4 max-w-[150px]">
+        <div class="flex items-center gap-4 truncate">
             {% include "partials/star_icon.html" with note=note %}
-            <!-- User Name -->
             <span
-                class="truncate {% if note.note_status == 'U' %}font-semibold{% else %}font-normal{% endif %} text-gray-800">
+                class="truncate {% if note.receiver == request.user and note.note_status == 'U' %}font-semibold{% else %}font-normal{% endif %} text-gray-800">
                 {{ note.sender.get_full_name }}
             </span>
         </div>
     </td>
 
-    <td class="p-2 w-2/3">
-        <div class="flex items-center gap-3 truncate">
-            <!-- Title -->
-            <span
-                class="truncate {% if note.note_status == 'U' %}font-semibold{% else %}font-normal{% endif %} text-gray-800">
-                {{ note.title }}
-                <span> - </span>
+    <!-- Title + Content -->
+    <td class="p-2 w-2/3 max-w-[350px]">
+        <div class="flex items-center gap-3">
+            <span class="truncate {% if note.unread %}font-semibold{% else %}font-normal{% endif %} text-gray-800">
+                {{ note.title }} -
             </span>
-
-            <!-- Content -->
-            <span
-                class="truncate text-gray-500 {% if note.note_status == 'U' %}font-semibold{% else %}font-normal{% endif %}">
+            <span  class="truncate max-w-[100px] text-gray-500 {% if note.unread %}font-semibold{% else %}font-normal{% endif %}">
                 {{ note.content|truncatechars:50 }}
             </span>
         </div>
     </td>
 
     <!-- Send Date -->
-    <td
-        class="text-sm text-gray-600 font-normal {% if note.note_status == 'U' %}font-semibold{% else %}font-normal{% endif %}">
-
+    <td class="text-sm text-gray-600 font-normal {% if note.unread %}font-semibold{% else %}font-normal{% endif %} w-[80px] truncate">
         {{ note.created_at|date:"Y/m/d" }}
-
     </td>
-    <td class="p-2 text-center w-1/2">
-        {% if note.note_status == 'U'%}
-        <!-- <span class="w-2 h-2 bg-blue-400 rounded-full inline-block
-                   shadow-sm ring-1 ring-blue-300"></span>  -->
-        <!-- <span
-                    class="inline-block  w-1.5 h-1.5 me-1 bg-blue-700 rounded-full shadow-sm ring-1 ring-blue-500"></span> -->
 
+    <!-- Unread Badge -->
+    <td class="p-2 text-center w-[80px]">
+        {% if note.unread %}
         <span class="inline-flex items-center bg-blue-100 border border-blue-300 text-blue-700
-                  text-[10px] font-medium px-2.5  rounded">
+                  text-[10px] font-medium px-2.5 rounded">
             <span class="w-1.5 h-1.5 me-1 bg-blue-600 rounded-full"></span>
-            جديد!
+            جديدة!
         </span>
-
-
-
         {% endif %}
     </td>
 </tr>
 
 {% empty %}
-
 <tr>
     <td colspan="4" class="p-10 h-[50vh]">
         <div class="flex flex-col items-center justify-center gap-4 text-gray-400">
@@ -69,25 +53,13 @@
                 <path d="M3 3l18 18" />
             </svg>
             {% if current_box == 'sent-notes' %}
-            <span class="text-sm font-semibold">
-                لم ترسل أي ملاحظات بعد
-            </span>
+            <span class="text-sm font-semibold">لم ترسل أي ملاحظات بعد</span>
             {% elif current_box == 'received-notes' %}
-            <span class="text-sm font-semibold">
-                لا توجد ملاحظات واردة
-            </span>
+            <span class="text-sm font-semibold">لا توجد ملاحظات واردة</span>
             {% elif current_box == 'starred-notes' %}
-            <span class="text-sm font-semibold">
-                لا توجد ملاحظات مميزة
-            </span>
-            {% elif current_box == 'all-notes' %}
-            <span class="text-sm font-semibold">
-                لا توجد ملاحظات لعرضها
-            </span>
+            <span class="text-sm font-semibold">لا توجد ملاحظات مميزة</span>
             {% else %}
-            <span class="text-sm font-semibold">
-                لا توجد نتائج مطابقة للبحث
-            </span>
+            <span class="text-sm font-semibold">لا توجد ملاحظات لعرضها</span>
             {% endif %}
         </div>
     </td>

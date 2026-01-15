@@ -1,6 +1,6 @@
 from django import forms
 from django.forms import ModelForm
-from .models import Initiative, KPI, Note, StrategicPlan, StrategicGoal
+from .models import Department, Initiative, KPI, Note, StrategicPlan, StrategicGoal, User
 
 # ============== Base Form =================
 # Base form with shared clean and save logic
@@ -117,12 +117,54 @@ class StrategicGoalForm(BaseForm):
 class NoteForm(BaseForm):
     class Meta:
         model = Note
-        fields = ['title', 'content', 'receiver']
+        fields = ['title', 'content', 'receiver', 'initiative','strategic_goal']
         widgets = {
-            'title': forms.TextInput(attrs={'class': 'border rounded px-2 py-1 w-full', 'placeholder': 'اكتب عنوان الملاحظة...'}),
-            'content': forms.Textarea(attrs={'class': 'border rounded px-2 py-1 w-full', 'rows':3}),
-            'receiver': forms.Select(attrs={'class': 'border rounded px-2 py-1 w-full'})
+            'title': forms.TextInput(attrs={'type':'text', 'class':'input font-normal text-sm px-2 w-full', 'placeholder': 'اكتب عنوان الملاحظة...'}),
+            'content': forms.Textarea(attrs={'class': 'border rounded-lg font-normal text-m px-2 py-1 w-full hover:border-gray-400 resize-none', 'rows':6}),
+            'receiver': forms.Select(attrs={'class': 'select select-sm select-bordered px-4 w-64'}),
+            'initiative': forms.Select(attrs={'class': 'select select-sm select-bordered px-4 w-64'}),
+            'strategic_goal': forms.Select(attrs={'class': 'select select-sm select-bordered px-4 w-64'})
         }
+
+        labels = {
+            'title': 'العنوان:',
+            'content': 'محتوى الملاحظة',
+            'receiver': 'اسم المستلم:',
+            'initiative': 'عنوان المبادرة:',
+            'strategic_goal': 'عنوان الهدف:',
+        }
+
+        error_messages = {
+            'title': {
+                'required': 'يرجى إدخال العنوان ',
+                'max_length': 'العنوان طويل جدًا',
+            },
+            'content': {
+                'required': 'يرجى كتابة محتوى الملاحظة',
+                'max_length': 'المحتوى طويل جداً، الرجاء اختصاره'
+            }
+        }
+
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+
+        self.fields['initiative'].empty_label = "اختر المبادرة"
+        self.fields['strategic_goal'].empty_label = "اختر الهدف الاستراتيجي"
+
+        if user:
+            role = user.role.role_name
+
+            if role == 'GM':
+                self.fields['receiver'].label = 'اسم المدير:'
+                self.fields['receiver'].empty_label = "اختر اسم المدير"
+            elif role in ['M', 'CM']:
+                self.fields['receiver'].label = 'اسم الموظف:'
+                self.fields['receiver'].empty_label = "اختر اسم الموظف"
+           
+
+
 
 # ===== KPI Form =====
 class KPIForm(BaseForm):

@@ -1,6 +1,6 @@
 <button
-    hx-post="."
-    hx-vals='{"note_id": "{{ note.id }}"}'
+    hx-post="{% url 'note_detail' note.id %}"
+    hx-vals='{"action":"toggle_star"}'
     hx-target="this"
     hx-swap="outerHTML"
     hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'

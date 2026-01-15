@@ -2,12 +2,13 @@
 {% block content %}
 {% with current_box=request.GET.box|default:'all-notes' %}
 
-<div class="flex h-[85vh] bg-white rounded-xl shadow overflow-hidden">
+<div class="flex h-[85vh] bg-white rounded-lg shadow m-2">
 
     <!-- Sidebar -->
-    <aside class="group w-16 hover:w-64 transition-all duration-300 border-r bg-gray-50 p-3 overflow-hidden">
+    <aside class="group w-16 hover:w-64 transition-all duration-300 border-r bg-gray-50 p-3 mt-2 overflow-hidden">
 
-        <a href="{% url 'note_create' %}" class="flex items-center justify-center gap-3 bg-blue-500 text-white py-2 rounded-lg mb-6 font-semibold hover:bg-blue-600
+        <a href="{% url 'note_create_modal' %}" hx-get="{% url 'note_create_modal' %}" hx-target="#note-form-container"
+            hx-swap="innerHTML" onclick="document.getElementById('note-modal-toggle').checked = true;" class="flex items-center justify-center gap-3 bg-blue-500 text-white py-2 rounded-lg mb-6 font-semibold hover:bg-blue-600
                             shadow-md hover:shadow-lg transform hover:-translate-y-0.5
                             transition duration-200 focus:ring-4 focus:ring-blue-200">
             <!-- chat plus icon -->
@@ -41,6 +42,7 @@
                 </a>
             </li>
 
+            {% if request.user.role.role_name != 'GM' %}
             <li>
                 <a href="{% url 'notes_list' %}?box=received-notes" class="mailbox-btn relative w-full flex items-center gap-3 px-3 py-2 rounded-full hover:bg-gray-100
                          {% if current_box == 'received-notes' %} bg-blue-100 text-blue-800 {% endif %}">
@@ -53,24 +55,24 @@
                         <path d="M4 6a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2l0 -12" />
                         <path d="M4 13h3l3 3h4l3 -3h3" />
                     </svg>
-                    <!-- RED DOT -->
-                    {% if unread_count > 0 %}
-                    <span
-                        class="absolute top-[10px] right-[10px] w-2 h-2 bg-red-500 rounded-full group-hover:hidden"></span>
-                    {% endif %}
+                 
 
-                    <span class="hidden group-hover:inline whitespace-nowrap">
+                    <!-- RED DOT -->
+                    <span id="unread-dot" class="{% if unread_count == 0 %}hidden{% endif %} absolute top-[10px] right-[10px] w-2 h-2
+                    bg-red-500 rounded-full group-hover:hidden">
+                    </span>
+
+                     <span class="hidden group-hover:inline whitespace-nowrap">
                         الملاحظات الواردة
                     </span>
 
-                    {% if unread_count > 0 %}
-                    <span id="unread-badge"
-                        class="hidden group-hover:inline whitespace-nowrap ml-2 text-xs font-semibold text-red-500 bg-red-100 px-2 py-1 rounded-full ">
+                    <span id="unread-badge" class="hidden group-hover:inline whitespace-nowrap
+                    ml-2 text-xs font-semibold text-red-500 bg-red-100 px-2 py-1 rounded-full">
                         {{ unread_count }}
                     </span>
-                    {% endif %}
                 </a>
             </li>
+            {% endif %}
 
 
             <li>
@@ -111,7 +113,7 @@
     <section class="flex-1 border-r flex flex-col">
 
         <!-- Top Bar -->
-        <div class="p-3 border-b flex items-center justify-between">
+        <div class="p-3 border-b flex items-center justify-between mt-2">
             <div class="relative w-full">
                 <!-- Search -->
                 <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
@@ -127,6 +129,8 @@
                     placeholder="البحث عن ملاحظة ..." hx-get="{% url 'notes_list' %}"
                     hx-trigger="keyup changed delay:400ms" hx-target="#notes-list" hx-push-url="true" />
             </div>
+
+            {% if request.user.role.role_name != 'GM' %}
             <!-- Filter button-->
             <div class="relative">
                 <button id="dropdownDefaultButton"
@@ -184,6 +188,7 @@
                     </ul>
                 </div>
             </div>
+            {% endif %}
 
         </div>
 
@@ -215,7 +220,19 @@
             <path d="M3 3l18 18" />
         </svg>
     </section>
+</div>
 
+<!-- Hidden checkbox controlling modal (DaisyUI) -->
+<input type="checkbox" id="note-modal-toggle" class="modal-toggle">
+
+<div class="modal">
+    <div class="modal-box w-full max-w-3xl relative p-0 ">
+
+        <!-- Container where Note Form will load -->
+        <div id="note-form-container" class="p-0.5">
+
+        </div>
+    </div>
 </div>
 
 <script>

@@ -1,34 +1,85 @@
-<div class="space-y-4">
+<div class="max-w-3xl mx-auto py-8 space-y-6">
 
-    <div class="border-b pb-4">
-        <h2 class="text-xl font-bold">{{ note.title }}</h2>
+  <!-- Breadcrumbs -->
+  <div class="text-gray-600 text-sm">
+    <a href="/dashboard" class="hover:underline">لوحة التحكم</a> &gt;
+    <a href="/notes" class="hover:underline">الملاحظات</a> &gt;
+    <span>تفاصيل الملاحظة</span>
+  </div>
 
-        <p class="text-sm text-gray-500">
-            من: {{ note.sender.get_full_name }} |
-            إلى: {{ note.receiver.get_full_name }} |
-            {{ note.created_at|date:"Y-m-d H:i" }}
-        </p>
+  <!-- Parent Note -->
+  <div class="bg-white p-4 rounded shadow space-y-2">
+    <h2 class="font-semibold text-lg">{{ note.title }}</h2>
+
+    <div class="flex justify-between text-sm text-gray-500">
+      <span>
+        {% if note.sender == request.user %}من: انت{% else %}من: {{ note.sender.get_full_name }}{% endif %}
+      </span>
+      <span>
+        {% if note.initiative %}إلى: المبادرة {{ note.initiative.title }}
+        {% elif note.department %}إلى: {{ note.department.name }}
+        {% else %}
+          {% if note.receiver == request.user %}إلى: انت{% else %}إلى: {{ note.receiver.get_full_name }}{% endif %}
+        {% endif %}
+      </span>
     </div>
 
-    <div class="text-gray-800 leading-relaxed">
-        {{ note.content|linebreaks }}
+    <div class="text-xs text-gray-400">{{ note.created_at|date:"Y/m/d H:i" }}</div>
+    <p class="mt-2 text-gray-800">{{ note.content }}</p>
+    <hr class="border-t border-gray-200 my-4" />
+
+    <!-- Replies -->
+    <div class="space-y-3 max-h-[60vh] overflow-y-auto">
+      {% if replies %}
+        {% for reply in replies %}
+        <div class="chat {% if reply.sender == request.user %}chat-end{% else %}chat-start{% endif %}">
+          <div class="chat-header flex justify-between items-center">
+            <span>{{ reply.sender.get_full_name }}</span>
+            <time class="text-xs opacity-50">{{ reply.created_at|date:"Y/m/d H:i" }}</time>
+          </div>
+
+          <div class="chat-bubble {% if reply.sender == request.user %}bg-blue-50{% else %}bg-gray-50{% endif %}">
+            {{ reply.content }}
+          </div>
+
+          <div class="chat-footer flex justify-between text-xs opacity-50">
+            <span>
+              {% if reply.sender == request.user %}Seen{% else %}Delivered{% endif %}
+              {% if reply.note_status == 'U' and reply.created_at|date:"Y-m-d" == today %}
+                <span class="ml-1 font-semibold text-blue-600">جديد اليوم!</span>
+              {% elif reply.note_status == 'U' %}
+                <span class="ml-1 font-semibold text-yellow-600">غير مقروءة</span>
+              {% endif %}
+            </span>
+
+            {% if reply.sender == request.user %}
+            <form method="post" action="{% url 'note_detail' note.pk %}" class="inline">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="edit_reply" />
+              <input type="hidden" name="edit_reply_id" value="{{ reply.id }}" />
+              <input type="text" name="edit_content" value="{{ reply.content }}" class="border rounded px-1 text-xs" />
+              <button type="submit" class="ml-1 bg-gray-200 px-2 rounded text-xs">تعديل</button>
+            </form>
+            {% endif %} 
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        {% if can_reply %}
+          <p class="text-gray-400 text-center py-4">لا يوجد ردود حتى الآن</p>
+        {% endif %}
+      {% endif %}
     </div>
 
-    <div class="flex gap-2 pt-4 border-t">
-        <a href="{% url 'note_update' note.id %}"
-           class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded">
-            تعديل
-        </a>
+    <!-- Reply Box -->
+    {% if can_reply %}
+    <form method="post"  action="{% url 'note_detail' note.pk %}" class="flex gap-2 mt-4">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="reply" />
+      <textarea name="reply_content" rows="2" placeholder="اكتب ردك هنا..." class="w-full p-2 border rounded"></textarea>
+      <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">إرسال</button>
+    </form>
+    {% endif %}
 
-        <a href="{% url 'note_delete' note.id %}"
-           class="px-3 py-1 bg-red-100 text-red-700 rounded">
-            حذف
-        </a>
-
-        <a href="{% url 'note_create' %}?reply_to={{ note.id }}"
-           class="ml-auto px-3 py-1 bg-blue-100 text-blue-700 rounded">
-            رد
-        </a>
-    </div>
-
+  </div>
 </div>
