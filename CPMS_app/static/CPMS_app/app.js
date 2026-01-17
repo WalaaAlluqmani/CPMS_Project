@@ -306,282 +306,282 @@ document.querySelectorAll('.add-btn').forEach(btn => {
     });
 });
 
-
-document.querySelectorAll('.remove-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        const li = btn.closest('li');
-        const addBtn = li.querySelector('.add-btn');
-        const id = btn.dataset.id;
-        const name = li.querySelector('span').textContent;
-        const wasAssigned = btn.dataset.assigned === 'true';
-
-        if (wasAssigned) {
-            toRemove.set(id, name);
-        }
-        toAdd.delete(id);
-
-        btn.disabled = true;
-        addBtn.disabled = false;
-    });
-});
-
-const doneBtn = document.getElementById('done-btn');
-if (doneBtn) {
-    doneBtn.addEventListener('click', () => {
-        if (toAdd.size === 0 && toRemove.size === 0) {
-            alert("لا توجد تغيرات");
-            return;
-        }
-
-        let text = '';
-        if (toAdd.size) text += 'تم تعيين: \n' + Array.from(toAdd.values()).join(', ') + '\n\n';
-        if (toRemove.size) text += 'تم إلغاء تعيين: \n' + Array.from(toRemove.values()).join(', ');
-
-        document.getElementById('popup-text').textContent = text;
-        openPopup('confirm-popup');
-    });
 }
+// document.querySelectorAll('.remove-btn').forEach(btn => {
+//     btn.addEventListener('click', () => {
+//         const li = btn.closest('li');
+//         const addBtn = li.querySelector('.add-btn');
+//         const id = btn.dataset.id;
+//         const name = li.querySelector('span').textContent;
+//         const wasAssigned = btn.dataset.assigned === 'true';
+
+//         if (wasAssigned) {
+//             toRemove.set(id, name);
+//         }
+//         toAdd.delete(id);
+
+//         btn.disabled = true;
+//         addBtn.disabled = false;
+//     });
+// });
+
+// const doneBtn = document.getElementById('done-btn');
+// if (doneBtn) {
+//     doneBtn.addEventListener('click', () => {
+//         if (toAdd.size === 0 && toRemove.size === 0) {
+//             alert("لا توجد تغيرات");
+//             return;
+//         }
+
+//         let text = '';
+//         if (toAdd.size) text += 'تم تعيين: \n' + Array.from(toAdd.values()).join(', ') + '\n\n';
+//         if (toRemove.size) text += 'تم إلغاء تعيين: \n' + Array.from(toRemove.values()).join(', ');
+
+//         document.getElementById('popup-text').textContent = text;
+//         openPopup('confirm-popup');
+//     });
+// }
 
 
-const cancelBtn = document.getElementById('cancel-btn');
-if (cancelBtn) {
+// const cancelBtn = document.getElementById('cancel-btn');
+// if (cancelBtn) {
 
-    cancelBtn.addEventListener('click', () => {
-        toAdd.clear();
-        toRemove.clear();
+//     cancelBtn.addEventListener('click', () => {
+//         toAdd.clear();
+//         toRemove.clear();
 
-        document.querySelectorAll('.add-btn').forEach(btn => {
-            const wasAssigned = btn.dataset.assigned === 'true';
-            btn.disabled = wasAssigned;
-        });
+//         document.querySelectorAll('.add-btn').forEach(btn => {
+//             const wasAssigned = btn.dataset.assigned === 'true';
+//             btn.disabled = wasAssigned;
+//         });
 
-        document.querySelectorAll('.remove-btn').forEach(btn => {
-            const wasAssigned = btn.dataset.assigned === 'true';
-            btn.disabled = !wasAssigned;
-        });
+//         document.querySelectorAll('.remove-btn').forEach(btn => {
+//             const wasAssigned = btn.dataset.assigned === 'true';
+//             btn.disabled = !wasAssigned;
+//         });
 
-        closePopup('assign_employee');
-        closePopup('confirm-popup');
-    });
-}
-
-
-const confirmAssignBtn = document.getElementById('confirmAssign');
-if (confirmAssignBtn){
-    confirmAssignBtn.addEventListener('click', function() {
-        const hiddenContainer = document.getElementById('hidden-inputs');
-        hiddenContainer.innerHTML = ''; // clear inputs
-document.getElementById('confirmAssign').addEventListener('click', function () {
-    const hiddenContainer = document.getElementById('hidden-inputs');
-    hiddenContainer.innerHTML = ''; // clear inputs
-
-        toAdd.forEach((name, id) => {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'to_add[]';
-            input.value = id;  //id
-            hiddenContainer.appendChild(input);
-        });
-
-        toRemove.forEach((name, id) => {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'to_remove[]';
-            input.value = id;  
-            hiddenContainer.appendChild(input);
-        });
-        document.getElementById('assignForm').submit(); 
-    });
-}
-    toRemove.forEach((name, id) => {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'to_remove[]';
-        input.value = id;
-        hiddenContainer.appendChild(input);
-    });
-
-    document.getElementById('assignForm').submit();
-});
+//         closePopup('assign_employee');
+//         closePopup('confirm-popup');
+//     });
+// }
 
 
-function closeConfirmPopup() {
-    closePopup('confirm-popup');
-}
+// const confirmAssignBtn = document.getElementById('confirmAssign');
+// if (confirmAssignBtn){
+//     confirmAssignBtn.addEventListener('click', function() {
+//         const hiddenContainer = document.getElementById('hidden-inputs');
+//         hiddenContainer.innerHTML = ''; // clear inputs
+// document.getElementById('confirmAssign').addEventListener('click', function () {
+//     const hiddenContainer = document.getElementById('hidden-inputs');
+//     hiddenContainer.innerHTML = ''; // clear inputs
+
+//         toAdd.forEach((name, id) => {
+//             const input = document.createElement('input');
+//             input.type = 'hidden';
+//             input.name = 'to_add[]';
+//             input.value = id;  //id
+//             hiddenContainer.appendChild(input);
+//         });
+
+//         toRemove.forEach((name, id) => {
+//             const input = document.createElement('input');
+//             input.type = 'hidden';
+//             input.name = 'to_remove[]';
+//             input.value = id;  
+//             hiddenContainer.appendChild(input);
+//         });
+//         document.getElementById('assignForm').submit(); 
+//     });
+// }
+//     toRemove.forEach((name, id) => {
+//         const input = document.createElement('input');
+//         input.type = 'hidden';
+//         input.name = 'to_remove[]';
+//         input.value = id;
+//         hiddenContainer.appendChild(input);
+//     });
+
+//     document.getElementById('assignForm').submit();
+// });
 
 
-function closeAssignPopup() {
-    closePopup('confirm-assign_employee');
-}
+// function closeConfirmPopup() {
+//     closePopup('confirm-popup');
+// }
 
 
-// ---------------------------
-//           KPI js     
-// ---------------------------
-document.querySelectorAll('.edit-kpi-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-        e.preventDefault(); // don't follow href
+// function closeAssignPopup() {
+//     closePopup('confirm-assign_employee');
+// }
 
-        const kpiId = btn.dataset.kpiId;
-        const initiativeId = btn.dataset.initiativeId;
 
-        const form = document.getElementById('kpiForm');
-        const title = document.getElementById('kpi-modal-title');
+// // ---------------------------
+// //           KPI js     
+// // ---------------------------
+// document.querySelectorAll('.edit-kpi-btn').forEach(btn => {
+//     btn.addEventListener('click', (e) => {
+//         e.preventDefault(); // don't follow href
 
-        // Update modal title
-        title.textContent = ' تعديل مؤشر ' + btn.dataset.kpiName;
+//         const kpiId = btn.dataset.kpiId;
+//         const initiativeId = btn.dataset.initiativeId;
 
-        // Set form action to update URL
-        form.action = '/initiatives/' + initiativeId + '/kpis/' + kpiId + '/edit/';
+//         const form = document.getElementById('kpiForm');
+//         const title = document.getElementById('kpi-modal-title');
 
-        // Pre-fill the form fields
-        form.kpi.value = btn.dataset.kpiName;
-        form.unit.value = btn.dataset.unit;
-        form.target_value.valueAsNumber = parseFloat(btn.dataset.target) || 0;
-        form.actual_value.valueAsNumber = parseFloat(btn.dataset.actual) || 0;
+//         // Update modal title
+//         title.textContent = ' تعديل مؤشر ' + btn.dataset.kpiName;
 
-        // Mark form as update
-        form.dataset.isUpdate = "true";
+//         // Set form action to update URL
+//         form.action = '/initiatives/' + initiativeId + '/kpis/' + kpiId + '/edit/';
 
-        // Show modal
-        document.getElementById('kpi-modal').classList.remove('hidden');
+//         // Pre-fill the form fields
+//         form.kpi.value = btn.dataset.kpiName;
+//         form.unit.value = btn.dataset.unit;
+//         form.target_value.valueAsNumber = parseFloat(btn.dataset.target) || 0;
+//         form.actual_value.valueAsNumber = parseFloat(btn.dataset.actual) || 0;
+
+//         // Mark form as update
+//         form.dataset.isUpdate = "true";
+
+//         // Show modal
+//         document.getElementById('kpi-modal').classList.remove('hidden');
         
-    });
+//     });
 
 
-});
+// });
 
-const addKpiBtn = document.getElementById('add_kpi_button');
-if (addKpiBtn){
-    addKpiBtn.addEventListener('click', () => {
-        const form = document.getElementById('kpiForm');
-        const title = document.getElementById('kpi-modal-title');
+// const addKpiBtn = document.getElementById('add_kpi_button');
+// if (addKpiBtn){
+//     addKpiBtn.addEventListener('click', () => {
+//         const form = document.getElementById('kpiForm');
+//         const title = document.getElementById('kpi-modal-title');
 
-        form.reset(); // clear any old values from previous update
-        delete form.dataset.isUpdate; // remove update flag
-        title.textContent = 'إضافة مؤشر أداء رئيسي لمبادرة ' + addKpiBtn.dataset.initiativeTitle;
+//         form.reset(); // clear any old values from previous update
+//         delete form.dataset.isUpdate; // remove update flag
+//         title.textContent = 'إضافة مؤشر أداء رئيسي لمبادرة ' + addKpiBtn.dataset.initiativeTitle;
 
-        // set form action to create KPI
-        const initiativeId = addKpiBtn.dataset.initiativeId;
-        form.action = '/initiatives/' + initiativeId + '/kpis/add/';
+//         // set form action to create KPI
+//         const initiativeId = addKpiBtn.dataset.initiativeId;
+//         form.action = '/initiatives/' + initiativeId + '/kpis/add/';
 
-        // show modal
-        document.getElementById('kpi-modal').classList.remove('hidden');
-    });
+//         // show modal
+//         document.getElementById('kpi-modal').classList.remove('hidden');
+//     });
 
-}
+// }
 
-const cancelBtnKpi = document.getElementById('cancel-btn-kpi')
-if (cancelBtnKpi){
-    document.getElementById('cancel-btn-kpi').addEventListener('click', () => {
-        const form = document.getElementById('kpiForm');
-document.addEventListener('DOMContentLoaded', () => {
+// const cancelBtnKpi = document.getElementById('cancel-btn-kpi')
+// if (cancelBtnKpi){
+//     document.getElementById('cancel-btn-kpi').addEventListener('click', () => {
+//         const form = document.getElementById('kpiForm');
+// document.addEventListener('DOMContentLoaded', () => {
 
-    const addKpiBtn = document.getElementById('add_kpi_button')
-    const title = document.getElementById('kpi-modal-title')
-    const cancelKpiBtn = document.getElementById('cancel-btn-kpi')
-    const form = document.getElementById('kpiForm');
-    const initiativeId = addKpiBtn.dataset.initiativeId
-    const initiativeTitle = addKpiBtn.dataset.initiativeTitle
-
-
-    //  Add Kpi Button JS
-    addKpiBtn.addEventListener('click', () => {
-        form.reset(); // clear values
-        form.kpi.value = null;
-        form.unit.value = null;
-        form.target_value.value = null;
-        form.actual_value.value = null;
-
-        form.removeAttribute('data-is-update');
-        title.textContent = '  إضافة مؤشر أداء رئيسي لمبادرة' + initiativeTitle
-        openPopup('kpi-modal');
-    });
-
-    // Edit Kpi Button JS
-    document.querySelectorAll('.edit-kpi-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const kpiId = btn.dataset.kpiId;
-            title.textContent = ' تعديل مؤشر ' + btn.dataset.kpiName
-            form.action = `/initiatives/${initiativeId}/kpis/${kpiId}/update/`;
-            form.dataset.isUpdate = "true"; // is update 
-
-            form.kpi.value = btn.dataset.kpiName;
-            form.unit.value = btn.dataset.unit;
-            form.target_value.value = btn.dataset.target;
-            form.actual_value.value = btn.dataset.actual;
-
-            openPopup('kpi-modal');
-        });
-    });
-
-    cancelKpiBtn.addEventListener('click', () => {
-
-        closePopup('kpi-modal');
-        form.reset();
-        document.getElementById('kpi-modal').classList.add('hidden');
-    });
-
-}
+//     const addKpiBtn = document.getElementById('add_kpi_button')
+//     const title = document.getElementById('kpi-modal-title')
+//     const cancelKpiBtn = document.getElementById('cancel-btn-kpi')
+//     const form = document.getElementById('kpiForm');
+//     const initiativeId = addKpiBtn.dataset.initiativeId
+//     const initiativeTitle = addKpiBtn.dataset.initiativeTitle
 
 
+//     //  Add Kpi Button JS
+//     addKpiBtn.addEventListener('click', () => {
+//         form.reset(); // clear values
+//         form.kpi.value = null;
+//         form.unit.value = null;
+//         form.target_value.value = null;
+//         form.actual_value.value = null;
+
+//         form.removeAttribute('data-is-update');
+//         title.textContent = '  إضافة مؤشر أداء رئيسي لمبادرة' + initiativeTitle
+//         openPopup('kpi-modal');
+//     });
+
+//     // Edit Kpi Button JS
+//     document.querySelectorAll('.edit-kpi-btn').forEach(btn => {
+//         btn.addEventListener('click', () => {
+//             const kpiId = btn.dataset.kpiId;
+//             title.textContent = ' تعديل مؤشر ' + btn.dataset.kpiName
+//             form.action = `/initiatives/${initiativeId}/kpis/${kpiId}/update/`;
+//             form.dataset.isUpdate = "true"; // is update 
+
+//             form.kpi.value = btn.dataset.kpiName;
+//             form.unit.value = btn.dataset.unit;
+//             form.target_value.value = btn.dataset.target;
+//             form.actual_value.value = btn.dataset.actual;
+
+//             openPopup('kpi-modal');
+//         });
+//     });
+
+//     cancelKpiBtn.addEventListener('click', () => {
+
+//         closePopup('kpi-modal');
+//         form.reset();
+//         document.getElementById('kpi-modal').classList.add('hidden');
+//     });
+
+// }
 
 
-// ---------------------------
-//     circle animation js     
-// ---------------------------
-window.addEventListener('load', () => {
-    const gauge = document.getElementById('gauge');
-    const gaugeText = document.getElementById('gauge-text');
+
+
+// // ---------------------------
+// //     circle animation js     
+// // ---------------------------
+// window.addEventListener('load', () => {
+//     const gauge = document.getElementById('gauge');
+//     const gaugeText = document.getElementById('gauge-text');
     
-    if (!gauge || !gaugeText) return;
-    const targetValue = parseFloat(gauge.getAttribute('data-value')) || 0;
-    const avg = parseInt(targetValue)*2
+//     if (!gauge || !gaugeText) return;
+//     const targetValue = parseFloat(gauge.getAttribute('data-value')) || 0;
+//     const avg = parseInt(targetValue)*2
 
-    gauge.setAttribute('stroke-dasharray', targetValue + ' 100');
+//     gauge.setAttribute('stroke-dasharray', targetValue + ' 100');
 
-    let current = 0;
-    const step = avg / 50; // 50 frames ~ 1s
-    const interval = setInterval(() => {
-        current += step;
-        if(current >= avg){
-            current = avg;
-            clearInterval(interval);
-        }
-        gaugeText.textContent = Math.round(current) + '%';
-    }, 20);
-});
-
-
-
-// ---------------------------
-//     add progress  js     
-// ---------------------------
-
-function addProgress(button) {
-    const form = document.getElementById('userInitiativeForm');
-    const progressInput = form.querySelector('.progress-input');
-
-    const initiativeId = button.dataset.initiativeId;
-    const currentProgress = button.dataset.currentProgress;
-
-    form.action = '/initiatives/' + initiativeId + '/add_progress/';
-    progressInput.value = currentProgress;
-
-    openPopup('user-initiative-modal');
-}
-
-function closeProgressModal() {
-    const form = document.getElementById('userInitiativeForm');
-    form.reset();
-
-    closePopup('user-initiative-modal')
-}
-
-    });
-});
+//     let current = 0;
+//     const step = avg / 50; // 50 frames ~ 1s
+//     const interval = setInterval(() => {
+//         current += step;
+//         if(current >= avg){
+//             current = avg;
+//             clearInterval(interval);
+//         }
+//         gaugeText.textContent = Math.round(current) + '%';
+//     }, 20);
+// });
 
 
-// ---------------------------
-//           note-row js     
-// ---------------------------
+
+// // ---------------------------
+// //     add progress  js     
+// // ---------------------------
+
+// function addProgress(button) {
+//     const form = document.getElementById('userInitiativeForm');
+//     const progressInput = form.querySelector('.progress-input');
+
+//     const initiativeId = button.dataset.initiativeId;
+//     const currentProgress = button.dataset.currentProgress;
+
+//     form.action = '/initiatives/' + initiativeId + '/add_progress/';
+//     progressInput.value = currentProgress;
+
+//     openPopup('user-initiative-modal');
+// }
+
+// function closeProgressModal() {
+//     const form = document.getElementById('userInitiativeForm');
+//     form.reset();
+
+//     closePopup('user-initiative-modal')
+// }
+
+//     });
+// });
+
+
+// // ---------------------------
+// //           note-row js     
+// // ---------------------------

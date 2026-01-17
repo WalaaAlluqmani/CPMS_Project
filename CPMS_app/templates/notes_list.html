@@ -1,11 +1,12 @@
 {% extends "base.html" %}
+{% block title %} الملاحظات {% endblock %}
 {% block content %}
 {% with current_box=request.GET.box|default:'all-notes' %}
 
-<div class="flex h-[85vh] bg-white rounded-lg shadow m-2">
+<div class="flex h-[85vh] bg-white rounded-lg shadow">
 
     <!-- Sidebar -->
-    <aside class="group w-16 hover:w-64 transition-all duration-300 border-r bg-gray-50 p-3 mt-2 overflow-hidden">
+    <aside class="group w-16 hover:w-64 transition-all duration-300 border-r bg-gray-50 p-3 mt-2">
 
         <a href="{% url 'note_create_modal' %}" hx-get="{% url 'note_create_modal' %}" hx-target="#note-form-container"
             hx-swap="innerHTML" onclick="document.getElementById('note-modal-toggle').checked = true;" class="flex items-center justify-center gap-3 bg-blue-500 text-white py-2 rounded-lg mb-6 font-semibold hover:bg-blue-600
@@ -55,14 +56,14 @@
                         <path d="M4 6a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2l0 -12" />
                         <path d="M4 13h3l3 3h4l3 -3h3" />
                     </svg>
-                 
+
 
                     <!-- RED DOT -->
                     <span id="unread-dot" class="{% if unread_count == 0 %}hidden{% endif %} absolute top-[10px] right-[10px] w-2 h-2
                     bg-red-500 rounded-full group-hover:hidden">
                     </span>
 
-                     <span class="hidden group-hover:inline whitespace-nowrap">
+                    <span class="hidden group-hover:inline whitespace-nowrap">
                         الملاحظات الواردة
                     </span>
 
@@ -110,8 +111,7 @@
 
 
     <!-- Messages Table -->
-    <section class="flex-1 border-r flex flex-col">
-
+    <section id="messages-section" class="flex-1 w-32 border-r border-l flex flex-col transition-all duration-300">
         <!-- Top Bar -->
         <div class="p-3 border-b flex items-center justify-between mt-2">
             <div class="relative w-full">
@@ -193,7 +193,7 @@
         </div>
 
         <!-- Notes List -->
-        <div class="overflow-y-auto flex-1" id="notes-list">
+        <div class="overflow-y-auto flex-1 overflow-hidden" id="notes-list">
             <table class="w-full text-sm">
                 <tbody>
                     {% include "partials/notes_table_rows.html" %}
@@ -206,7 +206,7 @@
     <!-- maybe delete this-->
 
     <!-- RIGHT: Message Preview -->
-    <section class="w-[35%] p-6 overflow-y-auto" id="note-preview">
+    <section id="note-preview" class="hidden w-[60%] p-4 overflow-y-auto  bg-white border-l transition-all duration-300">
         <p class="text-gray-400 text-center mt-20">
             اختر رسالة لعرض محتواها
         </p>
@@ -243,9 +243,29 @@
                 .then(res => res.text())
                 .then(html => {
                     document.getElementById('note-preview').innerHTML = html;
+                    openPreview();
                 });
         });
     });
+
+    function openPreview() {
+        const messages = document.getElementById('messages-section');
+        const preview = document.getElementById('note-preview');
+
+        preview.classList.remove('hidden');
+        messages.classList.remove('flex-1');
+        messages.classList.add('w-[40%]');
+    }
+
+    function closePreview() {
+        const messages = document.getElementById('messages-section');
+        const preview = document.getElementById('note-preview');
+
+        preview.classList.add('hidden');
+        messages.classList.remove('w-[40%]');
+        messages.classList.add('flex-1');
+    }
+
 </script>
 {% endwith %}
 {% endblock %}

@@ -12,12 +12,12 @@
     </td>
 
     <!-- Title + Content -->
-    <td class="p-2 w-2/3 max-w-[350px]">
+    <td class="p-2 w-2/3 max-w-[150px]">
         <div class="flex items-center gap-3">
             <span class="truncate {% if note.unread %}font-semibold{% else %}font-normal{% endif %} text-gray-800">
                 {{ note.title }} -
             </span>
-            <span  class="truncate max-w-[100px] text-gray-500 {% if note.unread %}font-semibold{% else %}font-normal{% endif %}">
+            <span  class="truncate max-w-[50px] text-gray-500 {% if note.unread %}font-semibold{% else %}font-normal{% endif %}">
                 {{ note.content|truncatechars:50 }}
             </span>
         </div>
@@ -29,12 +29,17 @@
     </td>
 
     <!-- Unread Badge -->
-    <td class="p-2 text-center w-[80px]">
+    <td class="px-3 py-2 text-center">
         {% if note.unread %}
-        <span class="inline-flex items-center bg-blue-100 border border-blue-300 text-blue-700
+        <!-- <span class="inline-flex items-center bg-blue-100 border border-blue-300 text-blue-700
                   text-[10px] font-medium px-2.5 rounded">
             <span class="w-1.5 h-1.5 me-1 bg-blue-600 rounded-full"></span>
             جديدة!
+        </span> -->
+         <span class="inline-flex items-center text-blue-700
+                  text-[10px] font-medium">
+            <span class="w-1.5 h-1.5 me-1 bg-blue-600 rounded-full"></span>
+           
         </span>
         {% endif %}
     </td>

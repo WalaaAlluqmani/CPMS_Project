@@ -1,3 +1,4 @@
+from itertools import groupby
 from django import forms
 from django.utils import timezone
 from django.shortcuts import render, redirect, get_object_or_404
@@ -1200,9 +1201,11 @@ class NoteDetailsview(LoginRequiredMixin, DetailView):
   
     def get_object(self, queryset=None):
         note = super().get_object(queryset)
-        if note.note_status == 'U' and note.receiver == self.request.user:
-            note.note_status = 'R'
-            note.save()
+        user = self.request.user
+
+        if note.note_status == 'U' and note.receiver == user:
+             note.note_status = 'R'
+             note.save()
         return note
    
     def can_reply(self, note, user):
@@ -1212,17 +1215,31 @@ class NoteDetailsview(LoginRequiredMixin, DetailView):
         if note.initiative:
            return UserInitiative.objects.filter(initiative=note.initiative, user=user).exists()
         
-        return note.receiver == user or note.sender
+        return note.receiver == user or note.sender == user
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         note = self.object
         user = self.request.user
 
-        context['replies'] = note.replies.all().order_by('created_at')
+        replies = note.replies.all().order_by('created_at')
+
+        # Group replies by date
+        grouped_replies = []
+        for date, notes in groupby(replies, key=lambda r: r.created_at.date()):
+            grouped_replies.append({
+                "date": date,
+                "notes": list(notes)
+            })
+       
+        if note.receiver:
+           context['is_read_by_receiver'] = note.read_by.filter(id=note.receiver.id).exists()
+        else:
+           context['is_read_by_receiver'] = False
+
+        context['grouped_replies'] = grouped_replies
         context['can_reply'] = self.can_reply(note, user)
         return context
-
 
     def post(self, request, *args, **kwargs):
      note = self.get_object()
