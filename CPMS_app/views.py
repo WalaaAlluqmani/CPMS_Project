@@ -415,7 +415,7 @@ class CreateInitiativeView(LoginRequiredMixin, RoleRequiredMixin, InitiativePerm
             status = STATUS[0][0],
             progress = 0
         )
-        messages.success(self.request, "تمت إضافة المبادرة بنجاح!")
+        messages.success(self.request, "تمت إضافة المبادرة بنجاح", extra_tags="create")
 
         return response
 
@@ -424,7 +424,7 @@ class CreateInitiativeView(LoginRequiredMixin, RoleRequiredMixin, InitiativePerm
         for field, errors in form.errors.items():
             if field != '__all__':
                 for error in errors:
-                    messages.error(self.request, f"{form.fields[field].label}: {error}")
+                    messages.error(self.request, f"{form.fields[field].label}: {error}", extra_tags="delete")
 
         # Non-field errors
         for error in form.non_field_errors():

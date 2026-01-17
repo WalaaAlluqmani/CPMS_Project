@@ -522,3 +522,20 @@ function closeProgressModal() {
     closePopup('user-initiative-modal')
 }
 
+
+
+// ---------------------------
+//         message  js     
+// ---------------------------
+
+// message will not dissappear on hover
+document.addEventListener("DOMContentLoaded", () => {
+    setTimeout(() => {
+        const container = document.getElementById("django-messages");
+        if (container) {
+            container.style.opacity = 0;
+            setTimeout(() => container.remove(), 500);
+        }
+    }, 3000);
+});
+
