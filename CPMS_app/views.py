@@ -221,6 +221,14 @@ def access_denied_view(request, exception=None):
 
 
 # ---------------------------
+#  Access Denied View
+# ---------------------------
+def page_not_found_view(request, exception=None):
+    return render(request, 'page_not_found.html', status=404)
+
+
+
+# ---------------------------
 #  Dashboard View
 # ---------------------------
 @login_required
