@@ -9,6 +9,8 @@ urlpatterns = [
     path('', include('CPMS_app.urls')),    
     path('accounts/', include('django.contrib.auth.urls')) #importing all of these down below!
 ]
+handler403 = 'CPMS_app.views.access_denied_view'
+handler404 = 'CPMS_app.views.page_not_found_view'
 
 
 # all of these are imported!

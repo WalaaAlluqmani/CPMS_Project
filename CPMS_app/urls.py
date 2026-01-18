@@ -16,7 +16,6 @@ from .views import (
 
 urlpatterns = [
 
-    path('access-denied/', TemplateView.as_view(template_name='access_denied.html'), name='access_denied'),
 
     #Dashboard
     path('', dashboard_view, name='dashboard'),
