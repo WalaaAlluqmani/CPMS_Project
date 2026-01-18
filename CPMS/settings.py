@@ -24,9 +24,9 @@ AUTH_USER_MODEL = 'CPMS_app.User'
 SECRET_KEY = 'django-insecure-%p#d)q!z#pr!d_sri31y0mx^xk%+kxa*swk0j_+5)^1m!c0ki2'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -78,10 +78,10 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'CPMS',
-        'USER': 'postgres',
-        'PASSWORD': 'post123',
-        'HOST': 'localhost',
-        'PORT': '5432',
+        # 'USER': 'postgres',
+        # 'PASSWORD': 'post123',
+        # 'HOST': 'localhost',
+        # 'PORT': '5432',
     }
 }
 

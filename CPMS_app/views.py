@@ -214,8 +214,17 @@ class InitiativePermissionMixin:
 #                                                    RENAD's Views                                                      #
 #########################################################################################################################
 
+# ---------------------------
+#  Access Denied View
+# ---------------------------
+def access_denied_view(request, exception=None):
+    return render(request, 'access_denied.html', status=403)
 
 
+
+# ---------------------------
+#  Dashboard View
+# ---------------------------
 @login_required
 def dashboard_view(request):
     '''
@@ -417,7 +426,7 @@ class CreateInitiativeView(LoginRequiredMixin, RoleRequiredMixin, InitiativePerm
             status = STATUS[0][0],
             progress = 0
         )
-        messages.success(self.request, "تمت إضافة المبادرة بنجاح!")
+        messages.success(self.request, "تمت إضافة المبادرة بنجاح", extra_tags="create")
 
         return response
 
@@ -426,11 +435,11 @@ class CreateInitiativeView(LoginRequiredMixin, RoleRequiredMixin, InitiativePerm
         for field, errors in form.errors.items():
             if field != '__all__':
                 for error in errors:
-                    messages.error(self.request, f"{form.fields[field].label}: {error}")
+                    messages.error(self.request, f"{form.fields[field].label}: {error}", extra_tags="error")
 
         # Non-field errors
         for error in form.non_field_errors():
-            messages.error(self.request, error)
+            messages.error(self.request, error, extra_tags='error')
 
         return super().form_invalid(form)
 
@@ -471,11 +480,23 @@ class UpdateInitiativeView(LoginRequiredMixin, RoleRequiredMixin, InitiativePerm
         # explicitly use the mixin’s logic
         return super().get_queryset()
 
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, "تم تحديث المبادرة بنجاح", extra_tags="update")
+        return response
+
+    def form_invalid(self, form):
+        for field, errors in form.errors.items():
+            if field != '__all__':
+                for error in errors:
+                    messages.error(self.request, f"{form.fields[field].label}: {error}", extra_tags="error")
+
+        for error in form.non_field_errors():
+            messages.error(self.request, error, extra_tags="error")
+
+        return super().form_invalid(form)
+
     def get_success_url(self):
-        goal_id = self.kwargs.get('goal_id')
-        # if goal_id:
-        #     return reverse('goal_initiatives_list', kwargs={'goal_id': goal_id})
-        # else:
         return reverse('initiatives_list')
 
 
@@ -493,11 +514,12 @@ class DeleteInitiativeView(LoginRequiredMixin, RoleRequiredMixin, InitiativePerm
     def get_queryset(self):
         return InitiativePermissionMixin.get_queryset(self)
 
+    def delete(self, request, *args, **kwargs):
+        obj = self.get_object()
+        messages.success(request, f"تم حذف المبادرة: {obj.title}", extra_tags="delete")
+        return super().delete(request, *args, **kwargs)
+
     def get_success_url(self):
-        goal_id = self.kwargs.get('goal_id')
-        # if goal_id:
-        #     return reverse('goal_initiatives_list', kwargs={'goal_id': goal_id})
-        # else:
         return reverse('initiatives_list')
 
 
@@ -531,6 +553,28 @@ def assign_employee_to_initiative(request, pk):
 
         for emp_id in employee_ids_to_remove:
             UserInitiative.objects.filter(user_id=emp_id, initiative=initiative).delete()
+        
+        if employee_ids_to_add or employee_ids_to_remove:
+            text = ''
+            if employee_ids_to_add:
+                if len(employee_ids_to_add) == 1:
+                    text += "تم تعيين موظف للمبادرة\n"
+                elif len(employee_ids_to_add) == 2:
+                    text += 'تم تعيين موظفان للمبادرة\n'
+                else:
+                    text += f"تم تعيين {len(employee_ids_to_add)} موظفين للمبادرة\n"
+                    
+            if employee_ids_to_remove:
+                if len(employee_ids_to_remove) == 1:
+                    text += "تم إلغاء تعيين موظف للمبادرة"
+                elif len(employee_ids_to_remove) == 2:
+                    text += 'تم إلغاء تعيين موظفان للمبادرة'
+                else:
+                    text += f"تم إلغاء تعيين {len(employee_ids_to_remove)} موظفين من المبادرة"
+            messages.success(request, text, extra_tags="create")
+        else:
+            messages.error(request, "لم يتم تعديل أي موظف", extra_tags="error")
+
 
         return redirect('initiative_detail', pk=initiative.id)
 
@@ -539,6 +583,7 @@ def assign_employee_to_initiative(request, pk):
         'employees': employees,
         'assigned_employee_ids': assigned_employee_ids,
     })
+
 
 
 def add_progress(request, initiative_id):
@@ -552,6 +597,8 @@ def add_progress(request, initiative_id):
             form.save()
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                 return JsonResponse({'success': True})
+            
+            messages.success(request, 'تم تحديث التقدم بنجاح', extra_tags="update")
             return redirect('initiative_detail', pk=initiative_id)
     else:
         form = UserInitiativeForm(instance=user_initiative)
@@ -598,7 +645,10 @@ def create_kpi_view(request, initiative_id):
             kpi = form.save(commit=False)
             kpi.initiative = initiative
             kpi.save()
+            
+            messages.success(request, 'تم إضافة مؤشر قياس أداء بنجاح',extra_tags='create')
             return redirect('initiative_detail', pk=initiative.id)
+        
         else:
             return render(request, 'kpi_form.html', {'initiative': initiative, 'form': form})
 
@@ -624,8 +674,14 @@ class DeleteKPIView(RoleRequiredMixin, DeleteView, LogMixin):
     model = KPI
     template_name = 'confirm_delete.html'
     allowed_roles = ['M', 'CM']
+    
+    def delete(self, request, *args, **kwargs):
+        obj = self.get_object()
+        messages.success(request, f"تم حذف مؤشر القياس: {obj.kpi}", extra_tags="delete")
+        success_url = self.get_success_url()
+        obj.delete() 
+        return redirect(success_url)
 
-    success_url = reverse_lazy('initiative_detail')
     def get_success_url(self):
         initiative_id = self.kwargs.get('initiative_id')
         return reverse('initiative_detail', kwargs={'pk': initiative_id})
@@ -639,6 +695,7 @@ def edit_kpi_view(request, initiative_id, kpi_id):
         form = KPIForm(request.POST, instance=kpi)
         if form.is_valid():
             form.save()
+            messages.success(request, f"تم تعديل مؤشر القياس: {kpi.kpi} بنجاح", extra_tags="update")
             return redirect('initiative_detail', pk=initiative_id)
     else:
         form = KPIForm(instance=kpi)
