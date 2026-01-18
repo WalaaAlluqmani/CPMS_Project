@@ -764,7 +764,6 @@ class AllPlansView(LoginRequiredMixin, RoleRequiredMixin, ListView):
     model = StrategicPlan
     template_name = 'plans_list.html'
     context_object_name = 'plans'
-    paginate_by = 5
     allowed_roles = ['M', 'CM', 'GM']  # Roles allowed to access this view
 
     def get_queryset(self):
@@ -775,41 +774,45 @@ class AllPlansView(LoginRequiredMixin, RoleRequiredMixin, ListView):
         """
         queryset = StrategicPlan.objects.all()
 
-        # Update plans that ended to inactive
         today = timezone.now().date()
         queryset.filter(is_active=True, end_date__lt=today).update(is_active=False)
-        #search & filter function
-        queryset = filter_queryset(
-          queryset=queryset,
-          request=self.request,
-          search_fields=['plan_name'],
-          status_field='is_active',
-          priority_field=None
-    )
 
+        queryset = filter_queryset(
+            queryset=queryset,
+            request=self.request,
+            search_fields=['plan_name'],
+            status_field='is_active',
+            priority_field=None
+        )
         return queryset
 
     def get_context_data(self, **kwargs):
-          context = super().get_context_data(**kwargs)
-          page_obj = context.get('page_obj')
-          paginator = context.get('paginator')
-          context['page_numbers'] = get_page_numbers(page_obj, paginator)
-          return context
+      context = super().get_context_data(**kwargs)
 
+      queryset = self.get_queryset()
+      per_page = 5
+
+      page_list, page_obj, paginator = paginate_queryset(queryset, self.request, per_page)
+
+      context['plans'] = page_list               
+      context['page_obj'] = page_obj
+      context['paginator'] = paginator
+      context['page_numbers'] = get_page_numbers(page_obj, paginator)
+      context['per_page'] = per_page
+      context['is_paginated'] = True if paginator.num_pages > 1 else False
+      context['active_plan_exists'] = StrategicPlan.objects.filter(is_active=True).exists()
+
+      return context
 
 
     def render_to_response(self, context, **response_kwargs):
-        """
-        - Handles AJAX requests differently: returns only partial HTML for the table.
-        - For normal requests, renders the full template as usual.
-        """
         if self.request.headers.get('x-requested-with') == 'XMLHttpRequest':
             html = render_to_string('partials/plans_table_rows.html', context, request=self.request)
             return JsonResponse({
-                'html': html,
-                'has_plans': context['page_obj'].object_list.exists()
+                'html': html
             })
         return super().render_to_response(context, **response_kwargs)
+
 
 
 class PlanDetailsview(LoginRequiredMixin, RoleRequiredMixin, DetailView):
@@ -844,15 +847,15 @@ class PlanDetailsview(LoginRequiredMixin, RoleRequiredMixin, DetailView):
          if role in ['M', 'CM']:
             goals_qs = goals_qs.filter(department=user.department)
 
-         per_page = int(self.request.GET.get('per_page', 5))
+         per_page = 5
          goal_list, page_obj, paginator = paginate_queryset(goals_qs, self.request, per_page)
 
          context['goals'] = goal_list
-         context['active_plan_exists'] = StrategicPlan.objects.filter(is_active=True).exists()
-
-        #  context['page_obj'] = page_obj
-        #  context['paginator'] = paginator
-        #  context['page_numbers'] = get_page_numbers(page_obj, paginator)
+         context['page_obj'] = page_obj
+         context['paginator'] = paginator
+         context['per_page'] = per_page
+         context['is_paginated'] = True if paginator.num_pages > 1 else False
+         context['page_numbers'] = get_page_numbers(page_obj, paginator)
          return context
 
      def render_to_response(self, context, **response_kwargs):
@@ -860,7 +863,6 @@ class PlanDetailsview(LoginRequiredMixin, RoleRequiredMixin, DetailView):
              html = render_to_string('partials/goals_table_rows.html', context, request=self.request)
              return JsonResponse({
                  'html': html
-               #  'has_goals': context['page_obj'].object_list.exists()
              })
 
          return super().render_to_response(context, **response_kwargs)
@@ -884,7 +886,7 @@ class CreatePlanView(LoginRequiredMixin, LogMixin, CreateView):
 
     def form_valid(self, form):
         self.object = form.save(user=self.request.user)
-        messages.success(self.request, "تمت إضافة الخطة بنجاح", extra_tags="create")
+        messages.success(self.request, "تم إنشاء الخطة بنجاح", extra_tags="create")
         return super().form_valid(form)
 
 
@@ -1220,14 +1222,19 @@ class AllNotesView(LoginRequiredMixin, ListView):
              qs = qs.filter(Q(sender=user))
         if note_box == 'starred-notes':
             qs = qs.filter(is_starred=True)
-        # if filter_val == "read":
-        #     qs = qs.filter(note_status='R')
-        # if filter_val == "starred":
-        #     qs = qs.filter(is_starred=True)
-        # if filter_val == "unread":
-        #     qs = qs.filter(note_status='U')
-        # if filter_val == "unstarred":
-        #     qs = qs.filter(is_starred=False)
+        if filter_val == "read":
+            qs = qs.filter(note_status='R')
+        if filter_val == "starred":
+            qs = qs.filter(is_starred=True)
+        if filter_val == "unread":
+            qs = qs.filter(note_status='U')
+        if filter_val == "unstarred":
+            qs = qs.filter(is_starred=False)
+        if filter_val == "goal":
+            qs = qs.filter(strategic_goal__department=user.department)
+        if filter_val == "initiative":
+            qs = qs.filter(initiative__userinitiative__user=user)
+            
 
         queryset = filter_queryset(
           queryset=qs,
@@ -1359,17 +1366,17 @@ class NoteDetailsview(LoginRequiredMixin, DetailView):
         reply.save()
         return redirect('note_detail', pk=note.pk)
 
-    #  Edit Reply
-     if action == "edit_reply":
-        reply_id = request.POST.get("edit_reply_id")
-        reply = get_object_or_404(Note, pk=reply_id, sender=user)
+    # #  Edit Reply
+    #  if action == "edit_reply":
+    #     reply_id = request.POST.get("edit_reply_id")
+    #     reply = get_object_or_404(Note, pk=reply_id, sender=user)
 
-        new_content = request.POST.get("edit_content", "").strip()
-        if new_content:
-            reply.content = new_content
-            reply.save()
+    #     new_content = request.POST.get("edit_content", "").strip()
+    #     if new_content:
+    #         reply.content = new_content
+    #         reply.save()
 
-        return redirect('note_detail', pk=note.pk)
+    #     return redirect('note_detail', pk=note.pk)
 
     # Fallback
      return redirect('note_detail', pk=note.pk)

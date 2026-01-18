@@ -94,7 +94,7 @@ class StrategicPlan (models.Model):
     class Meta:
         verbose_name = "StrategicPlan"
         verbose_name_plural = "StrategicPlans"
-        ordering = ['start_date'] 
+        ordering = ['-start_date'] 
        
 
     def __str__(self):

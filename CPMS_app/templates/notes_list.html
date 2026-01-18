@@ -1,5 +1,12 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %} الملاحظات {% endblock %}
+{% block breadcrumb %}
+<li class="flex items-center">
+    <span class="mx-2">/</span>
+    <span class="text-gray-800 font-semibold">الملاحظات</span>
+</li>
+{% endblock %}
 {% block content %}
 {% with current_box=request.GET.box|default:'all-notes' %}
 
@@ -134,24 +141,32 @@
                     hx-trigger="keyup changed delay:400ms" hx-target="#notes-list" hx-push-url="true" />
             </div>
 
-            <!-- <div class="relative">
+            <div class="relative">
                 <button id="dropdownDefaultButton"
                     class="flex flex-row-reverse items-center justify-between text-body bg-neutral-secondary-medium text-gray-500 hover:text-gray-800 hover:bg-neutral-tertiary-medium shadow-xs font-medium leading-5 rounded-base text-sm px-3 py-2 focus:outline-none gap-2 "
                     type="button">
-                    <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
+                    <svg id="dropdownIconfilter" class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-width="2"
                             d="M18.796 4H5.204a1 1 0 0 0-.753 1.659l5.302 6.058a1 1 0 0 1 .247.659v4.874a.5.5 0 0 0 .2.4l3 2.25a.5.5 0 0 0 .8-.4v-7.124a1 1 0 0 1 .247-.659l5.302-6.059c.566-.646.106-1.658-.753-1.658Z" />
                     </svg>
                 </button>
 
                 <div id="dropdown"
-                    class="absolute right-0  hidden bg-neutral-primary-medium border border-default-medium rounded-base shadow-lg w-32 overflow-hidden">
+                    class="absolute left-0  hidden bg-white border border-default-medium rounded-lg shadow-lg w-36 overflow-hidden">
                     <ul class="p-2 text-sm text-body font-medium space-y-1">
-                    
                         <li>
                             <button type="button" data-filter="read"
-                                class="filter-btn block w-full text-right px-4 py-2 hover:bg-gray-100">مقروءة</button>
+                                class="filter-btn block w-full text-right px-4 py-2 hover:bg-gray-100"
+                                hx-get="{% url 'notes_list' %}?filter=all-notes" hx-target="#notes-list"
+                                hx-swap="innerHTML">الكل</button>
+                        </li>
+
+                        <li>
+                            <button type="button" data-filter="read"
+                                class="filter-btn block w-full text-right px-4 py-2 hover:bg-gray-100"
+                                hx-get="{% url 'notes_list' %}?filter=read" hx-target="#notes-list"
+                                hx-swap="innerHTML">مقروءة</button>
                         </li>
                         <li>
                             <button type="button" data-filter="unread"
@@ -165,30 +180,38 @@
 
                         <li>
                             <button type="button" data-filter="starred"
-                                class="filter-btn block w-full text-right px-4 py-2 hover:bg-gray-100">مميزة
+                                class="filter-btn block w-full text-right px-4 py-2 hover:bg-gray-100"
+                                hx-get="{% url 'notes_list' %}?filter=starred" hx-target="#notes-list"
+                                hx-swap="innerHTML">مميزة
                                 بنجمة</button>
                         </li>
                         <li>
                             <button type="button" data-filter="unstarred"
-                                class="filter-btn block w-full text-right px-4 py-2 hover:bg-gray-100">غير مميزة
+                                class="filter-btn block w-full text-right px-4 py-2 hover:bg-gray-100"
+                                hx-get="{% url 'notes_list' %}?filter=unstarred" hx-target="#notes-list"
+                                hx-swap="innerHTML">غير مميزة
                                 بنجمة</button>
                         </li>
 
-                    
+
                         <li>
                             <button type="button" data-filter="goal"
-                                class="filter-btn block w-full text-right px-4 py-2 hover:bg-gray-100">حسب الهدف
+                                class="filter-btn block w-full text-right px-4 py-2 hover:bg-gray-100"
+                                hx-get="{% url 'notes_list' %}?filter=goal" hx-target="#notes-list"
+                                hx-swap="innerHTML">حسب الهدف
                             </button>
                         </li>
-                      
+
                         <li>
                             <button type="button" data-filter="initiative"
-                                class="filter-btn block w-full text-right px-4 py-2 hover:bg-gray-100">حسب المبادرة
+                                class="filter-btn block w-full text-right px-4 py-2 hover:bg-gray-100"
+                                hx-get="{% url 'notes_list' %}?filter=initiative" hx-target="#notes-list"
+                                hx-swap="innerHTML">حسب المبادرة
                             </button>
                         </li>
-                    </ul> 
+                    </ul>
                 </div>
-            </div> -->
+            </div>
 
         </div>
 
@@ -255,6 +278,20 @@
         messages.classList.remove('w-[40%]');
         messages.classList.add('flex-1');
     }
+
+    const btn = document.getElementById("dropdownDefaultButton");
+    const icon = document.getElementById("dropdownIconfilter");
+
+    btn.addEventListener("click", () => {
+        // إذا كان fill حالياً none نغيره إلى currentColor
+        if (icon.getAttribute("fill") === "none") {
+            icon.setAttribute("fill", "#00A399");
+            icon.setAttribute("stroke", "#00A399");
+        } else {
+            icon.setAttribute("fill", "none");
+            icon.setAttribute("stroke", "currentColor");
+        }
+    });
 
 </script>
 {% endwith %}

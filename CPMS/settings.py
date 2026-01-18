@@ -24,7 +24,7 @@ AUTH_USER_MODEL = 'CPMS_app.User'
 SECRET_KEY = 'django-insecure-%p#d)q!z#pr!d_sri31y0mx^xk%+kxa*swk0j_+5)^1m!c0ki2'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
@@ -121,4 +121,5 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
 LOGIN_REDIRECT_URL = 'dashboard'

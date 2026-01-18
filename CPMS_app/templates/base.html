@@ -63,6 +63,16 @@
     </aside>
 
     <main class="flex-1 p-8">
+        <!-- Breadcrumb -->
+        <nav class="text-sm text-gray-500 mb-4" aria-label="Breadcrumb">
+            <ol class="list-none p-0 inline-flex items-center space-x-2">
+                <li>
+                    <a href="{% url 'dashboard' %}" class="hover:text-gray-700">لوحة التحكم</a>
+                </li>
+                {% block breadcrumb %}
+                {% endblock %}
+            </ol>
+        </nav>
         {% block content %}
         {% endblock %}
     </main>
