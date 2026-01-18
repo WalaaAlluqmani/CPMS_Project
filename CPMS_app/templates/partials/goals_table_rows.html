@@ -6,28 +6,50 @@
     {% if request.user.role.role_name == 'GM' %}
     <td>{{ goal.department }}</td>
     {% endif %}
-    <td ><div class="px-3 py-1 text-xs rounded-full
+    <td>
+        <div class="px-3 py-1 text-xs rounded-full
     {% if goal.goal_status == 'C' %} bg-green-100 text-green-700
     {% elif goal.goal_status == 'IP' %} bg-blue-100 text-blue-700
     {% elif goal.goal_status == 'D' %} bg-red-100 text-red-700
     {% else %} bg-gray-100 text-gray-600 {% endif %}">
-    {{ goal.get_goal_status_display }}</div></td>
+            {{ goal.get_goal_status_display }}</div>
+    </td>
 
-    <td> <div class=" px-3 py-1 text-xs rounded-full
+    <td>
+        <div class=" px-3 py-1 text-xs rounded-full
          {% if goal.goal_priority == 'C' %} red-600 bg-red-100 text-red-800 border-red-500
          {% elif goal.goal_priority == 'H' %} border-orange-500 orange-500 bg-orange-100 text-orange-800
          {% elif goal.goal_priority == 'M' %} border-yellow-500 yellow-500 bg-yellow-100 text-yellow-800
          {% else %} border-green-500 green-500 bg-green-100 text-green-800{% endif %}">
-         {{ goal.get_goal_priority_display }}</div></td>
+            {{ goal.get_goal_priority_display }}</div>
+    </td>
     <td class="py-4">
         {{ goal.start_date }} - {{ goal.end_date }}
     </td>
-
+    {% if request.user.role.role_name == 'GM' %}
     <td class="text-center">
-        <button onclick="toggleRow('goal-{{ goal.id }}')" class="text-blue-600 hover:text-blue-800">
-            +
-        </button>
-    </td>
+        <a href="{% url 'note_create_modal' %}?goal_id={{ goal.id }}"
+            hx-get="{% url 'note_create_modal' %}?goal_id={{ goal.id }}" hx-target="#note-form-container"
+            hx-swap="innerHTML" onclick="document.getElementById('note-modal-toggle').checked = true;"
+            class="flex items-center justify-center gap-3 bg-[#00A399] text-white py-2 rounded-lg mb-6 font-semibold hover:bg-[#018077]
+          shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition duration-200 focus:ring-4 focus:ring-[#018077]/30">
+            <!-- chat plus icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="icon icon-tabler icons-tabler-outline icon-tabler-message-plus">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                <path d="M8 9h8" />
+                <path d="M8 13h6" />
+                <path d="M12.01 18.594l-4.01 2.406v-3h-2a3 3 0 0 1 -3 -3v-8a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v5.5" />
+                <path d="M16 19h6" />
+                <path d="M19 16v6" />
+            </svg>
+        </a>
+
+    </td>{% endif %}
+
+
+
 </tr>
 
 
@@ -72,7 +94,8 @@
                     {% endif %}
                     {% endwith %}
 
-                    <span class="text-sm font-normal text-gray-500">{{ initiative.start_date }} - {{ initiative.end_date}}</span>
+                    <span class="text-sm font-normal text-gray-500">{{ initiative.start_date }} - {{
+                        initiative.end_date}}</span>
                 </div>
 
 
@@ -123,10 +146,33 @@
 </tr>
 {% endfor %}
 
+<!-- Hidden checkbox controlling modal (DaisyUI) -->
+<input type="checkbox" id="note-modal-toggle" class="modal-toggle">
+
+<div class="modal">
+    <div class="modal-box w-full max-w-3xl relative p-0 ">
+
+        <!-- Container where Note Form will load -->
+        <div id="note-form-container" class="p-0.5">
+
+        </div>
+    </div>
+</div>
 <!--بنقلها بعدين JS-->
 <script>
     function toggleRow(id) {
         const row = document.getElementById(id);
         row.classList.toggle("hidden");
     }
+    document.querySelectorAll('.note-row').forEach(row => {
+        row.addEventListener('click', (e) => {
+            if (e.target.closest('.star-btn')) return;
+            fetch(`/notes/${row.dataset.id}/detail/`)
+                .then(res => res.text())
+                .then(html => {
+                    document.getElementById('note-preview').innerHTML = html;
+                    openPreview();
+                });
+        });
+    });
 </script>

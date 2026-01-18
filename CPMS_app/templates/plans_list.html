@@ -3,7 +3,7 @@
 {% block content %}
 {% include 'partials/confirm_delete.html' %}
 
-<div class="max-w-5xl mx-auto px-6 mt-10 mb-10" dir="rtl">
+<div class="max-w-6xl mx-auto px-6 mt-10 mb-10" dir="rtl">
     <div class="bg-white shadow-sm rounded-lg border border-gray-200 max-h-[500px] ">
 
         <!-- Container for Search, Filter, and Add Button -->
@@ -67,10 +67,10 @@
             </div>
 
             <!-- Add Plan Button -->
-            {% if request.user.role.role_name == 'CM' %}
+            {% if request.user.role.role_name == 'GM' %}
             <div>
-                <a href="{% url 'plan_create' %}"
-                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-semibold">
+                <a href="{% url 'plan_create' %}" class="bg-[#00A399] hover:bg-[#018077] text-white px-4 py-2 rounded-md text-sm font-semibold
+                         {% if active_plan_exists %} opacity-50 cursor-not-allowed pointer-events-none {% endif %}">
                     إضافة خطة
                 </a>
             </div>
@@ -153,7 +153,8 @@
                 <!-- Previous Button -->
                 <li>
                     {% if page_obj.has_previous %}
-                    <a href="?page={{ page_obj.previous_page_number }}&per_page={{ request.GET.per_page|default:5 }}&search={{ search }}&status={{ status }}" class="flex items-center justify-center text-body bg-neutral-secondary-medium border border-default-medium rounded-s-full text-sm px-3 h-9
+                    <a href="?page={{ page_obj.previous_page_number }}&per_page={{ request.GET.per_page|default:5 }}&search={{ search }}&status={{ status }}"
+                        class="flex items-center justify-center text-body bg-neutral-secondary-medium border border-default-medium rounded-s-full text-sm px-3 h-9
                               hover:bg-gray-200 transition-colors duration-200 bg-gray-50">
                         ‹
                     </a>
@@ -183,7 +184,8 @@
                 </li>
                 {% else %}
                 <li>
-                    <a href="?page={{ num }}&per_page={{ request.GET.per_page|default:5 }}&search={{ search }}&status={{ status }}" class="flex items-center justify-center text-body bg-neutral-secondary-medium border border-default-medium font-medium text-sm w-9 h-9
+                    <a href="?page={{ num }}&per_page={{ request.GET.per_page|default:5 }}&search={{ search }}&status={{ status }}"
+                        class="flex items-center justify-center text-body bg-neutral-secondary-medium border border-default-medium font-medium text-sm w-9 h-9
                                       hover:bg-gray-200 transition-colors duration-200 bg-gray-50">
                         {{ num }}
                     </a>
@@ -194,7 +196,8 @@
                 <!-- Next Button -->
                 <li>
                     {% if page_obj.has_next %}
-                    <a href="?page={{ page_obj.next_page_number }}&per_page={{ request.GET.per_page|default:5 }}&search={{ search }}&status={{ status }}" class="flex items-center justify-center text-body bg-neutral-secondary-medium border border-default-medium rounded-e-full text-sm px-3 h-9
+                    <a href="?page={{ page_obj.next_page_number }}&per_page={{ request.GET.per_page|default:5 }}&search={{ search }}&status={{ status }}"
+                        class="flex items-center justify-center text-body bg-neutral-secondary-medium border border-default-medium rounded-e-full text-sm px-3 h-9
                               hover:bg-gray-200 transition-colors duration-200 bg-gray-50">
                         ›
                     </a>

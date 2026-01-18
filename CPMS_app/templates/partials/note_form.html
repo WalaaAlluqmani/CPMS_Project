@@ -37,6 +37,14 @@
             <span class="text-sm font-medium text-gray-600 w-16">إلى: <span class="text-red-500">*</span></span>
 
             <div class="flex-1 flex items-center gap-4 flex-wrap shrink-0">
+                {% if request.GET.goal_id %}
+                <!-- إذا جينا من الهدف -->
+                <div class="flex gap-4 items-center shrink-0">
+                     <span class="font-semibold text-gray-800">
+                        {{ selected_goal.goal_title }}
+                    </span>
+                </div>
+                {% else %}
                 {% if user.role.role_name == 'GM' %}
                 <!-- GM send type -->
                 <select id="send-type" class="select select-sm select-bordered px-4 w-64">
@@ -53,6 +61,7 @@
                     <option value="initiative">مبادرة</option>
                 </select>
                 {% endif %}
+                {% endif %}
 
                 <!-- Receiver -->
                 <div id="receiver-field" class="hidden flex gap-4 items-center shrink-0">
@@ -62,8 +71,9 @@
                 </div>
 
                 <!-- Initiative -->
-                <div id="initiative-field" class="flex gap-4 items-center shrink-0">
-                    <span class="{% if user.role.role_name == 'E' %} hidden {% else %} text-sm font-medium text-gray-600 whitespace-nowrap {% endif %}">{{form.initiative.label}}<span
+                <div id="initiative-field" class="hidden flex gap-4 items-center shrink-0">
+                    <span
+                        class="{% if user.role.role_name == 'E' %} hidden {% else %} text-sm font-medium text-gray-600 whitespace-nowrap {% endif %}">{{form.initiative.label}}<span
                             class="text-red-500"> *</span></span>
                     {{ form.initiative }}
                 </div>
@@ -100,30 +110,23 @@
     </div>
 
     <!--Buttons container-->
-    <div class="px-6 py-4 flex justify-start">
+    <!-- <div class="px-6 py-4 flex justify-start">
         <button type="submit" class="flex items-center gap-2 mb-2 px-6 py-2.5 text-sm font-medium rounded-lg
                             text-blue-600 border border-blue-600 hover:bg-blue-600 hover:text-white
                             shadow-sm hover:shadow-md transform hover:-translate-y-0.5
-                            transition-all duration-200 focus:ring-4 focus:ring-blue-200">
+                            transition-all duration-200 focus:ring-4 focus:ring-blue-200"> -->
+    <div class="px-6 py-4 flex justify-start">
+        <button type="submit" class="flex items-center gap-2 mb-2 px-6 py-2.5 text-sm font-medium rounded-lg
+                            text-[#00A399]/100 border border-[#00A399] hover:bg-[#00A399]/100 hover:text-white
+                            shadow-sm hover:shadow-md transform hover:-translate-y-0.5
+                            transition-all duration-200 focus:ring-4 focus:ring-[#018077]/30">
 
-            {% if object %}
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                class="icon icon-tabler icons-tabler-outline icon-tabler-edit-circle">
-                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                <path d="M12 15l8.385 -8.415a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3" />
-                <path d="M16 5l3 3" />
-                <path d="M9 7.07a7 7 0 0 0 1 13.93a7 7 0 0 0 6.929 -6" />
-            </svg>
-            تعديل
-            {% else %}
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M10 14l11 -11" />
                 <path d="M21 3l-6.5 18a.55 .55 0 0 1 -1 0l-3.5 -7l-7 -3.5a.55 .55 0 0 1 0 -1l18 -6.5" />
             </svg>
             إرسال
-            {% endif %}
         </button>
     </div>
 </form>

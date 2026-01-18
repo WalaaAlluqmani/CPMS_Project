@@ -784,6 +784,8 @@ class PlanDetailsview(LoginRequiredMixin, RoleRequiredMixin, DetailView):
          goal_list, page_obj, paginator = paginate_queryset(goals_qs, self.request, per_page)
 
          context['goals'] = goal_list
+         context['active_plan_exists'] = StrategicPlan.objects.filter(is_active=True).exists()
+
         #  context['page_obj'] = page_obj
         #  context['paginator'] = paginator
         #  context['page_numbers'] = get_page_numbers(page_obj, paginator)
@@ -1149,19 +1151,19 @@ class AllNotesView(LoginRequiredMixin, ListView):
 
 
         if note_box == 'received-notes':
-            qs = qs.filter(Q(receiver=user) | Q(initiative__userinitiative__user=user))
+             qs = qs.filter(Q(receiver=user) | Q(initiative__userinitiative__user=user) |Q(strategic_goal__department=user.department))
         if note_box == 'sent-notes':
-            qs = qs.filter(Q(sender=user))
+             qs = qs.filter(Q(sender=user))
         if note_box == 'starred-notes':
             qs = qs.filter(is_starred=True)
-        if filter_val == "read":
-            qs = qs.filter(note_status='R')
-        if filter_val == "starred":
-            qs = qs.filter(is_starred=True)
-        if filter_val == "unread":
-            qs = qs.filter(note_status='U')
-        if filter_val == "unstarred":
-            qs = qs.filter(is_starred=False)
+        # if filter_val == "read":
+        #     qs = qs.filter(note_status='R')
+        # if filter_val == "starred":
+        #     qs = qs.filter(is_starred=True)
+        # if filter_val == "unread":
+        #     qs = qs.filter(note_status='U')
+        # if filter_val == "unstarred":
+        #     qs = qs.filter(is_starred=False)
 
         queryset = filter_queryset(
           queryset=qs,
@@ -1310,12 +1312,64 @@ class NoteDetailsview(LoginRequiredMixin, DetailView):
 
 
 
+# class CreateNoteView(LoginRequiredMixin, LogMixin, CreateView):
+#     '''
+#     - Allows creating a new note
+#     - Sets sender as current user
+#     - Receiver options filtered based on sender's role
+#     '''
+#     model = Note
+#     form_class = NoteForm
+#     template_name = 'partials/note_form.html'
+#     success_url = reverse_lazy('notes_list')
+
+#     def get_form_kwargs(self):
+#         kwargs = super().get_form_kwargs()
+#         kwargs['user'] = self.request.user  
+#         return kwargs
+
+#     # This is to set the receiver's name from a custom dropdown
+#     def get_form(self, form_class=None):
+#      form = super().get_form(form_class)
+#      user = self.request.user
+#      role = user.role.role_name
+
+#      form.fields['receiver'].required = False
+#      form.fields['initiative'].required = False
+#      form.fields['strategic_goal'].required = False
+
+#      if role == 'GM':
+#         form.fields['receiver'].queryset = User.objects.filter(role__role_name__in=['M', 'CM'])
+#         form.fields['strategic_goal'].queryset = StrategicGoal.objects.all()
+#         form.fields['initiative'].queryset = Initiative.objects.none()
+
+#      elif role in ['M', 'CM']:
+#         form.fields['receiver'].queryset = User.objects.filter(department=user.department, role__role_name='E')
+#         form.fields['initiative'].queryset = Initiative.objects.filter(userinitiative__user__department=user.department).distinct()
+#         form.fields['strategic_goal'].queryset = StrategicGoal.objects.none()
+
+#      elif role == 'E':
+#         initiatives = Initiative.objects.filter(userinitiative__user=user).distinct()
+#         form.fields['initiative'].queryset = initiatives
+
+
+#         form.fields['receiver'].widget = forms.HiddenInput()
+#         form.fields['strategic_goal'].widget = forms.HiddenInput()
+       
+
+#      return form
+
+
+#     def form_valid(self, form):
+#         self.object = form.save(sender=self.request.user)
+#         if form.cleaned_data.get('initiative'):
+#            form.instance.receiver = None
+        
+#         messages.success(self.request, "تم إرسال الملاحظة بنجاح", extra_tags="create")
+#         return super().form_valid(form)
+
+
 class CreateNoteView(LoginRequiredMixin, LogMixin, CreateView):
-    '''
-    - Allows creating a new note
-    - Sets sender as current user
-    - Receiver options filtered based on sender's role
-    '''
     model = Note
     form_class = NoteForm
     template_name = 'partials/note_form.html'
@@ -1323,48 +1377,78 @@ class CreateNoteView(LoginRequiredMixin, LogMixin, CreateView):
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs['user'] = self.request.user  
+        kwargs['user'] = self.request.user
         return kwargs
 
-    # This is to set the receiver's name from a custom dropdown
+    def get_initial(self):
+        initial = super().get_initial()
+        goal_id = self.request.GET.get('goal_id')
+
+        if goal_id:
+            initial['strategic_goal'] = goal_id
+
+        return initial
+
     def get_form(self, form_class=None):
-     form = super().get_form(form_class)
-     user = self.request.user
-     role = user.role.role_name
+        form = super().get_form(form_class)
+        user = self.request.user
+        role = user.role.role_name
 
-     form.fields['receiver'].required = False
-     form.fields['initiative'].required = False
-     form.fields['strategic_goal'].required = False
-
-     if role == 'GM':
-        form.fields['receiver'].queryset = User.objects.filter(role__role_name__in=['M', 'CM'])
-        form.fields['strategic_goal'].queryset = StrategicGoal.objects.all()
-        form.fields['initiative'].queryset = Initiative.objects.none()
-
-     elif role in ['M', 'CM']:
-        form.fields['receiver'].queryset = User.objects.filter(department=user.department, role__role_name='E')
-        form.fields['initiative'].queryset = Initiative.objects.filter(userinitiative__user__department=user.department).distinct()
-        form.fields['strategic_goal'].queryset = StrategicGoal.objects.none()
-
-     elif role == 'E':
-        initiatives = Initiative.objects.filter(userinitiative__user=user).distinct()
-        form.fields['initiative'].queryset = initiatives
-
+        form.fields['receiver'].required = False
+        form.fields['initiative'].required = False
+        form.fields['strategic_goal'].required = False
 
         form.fields['receiver'].widget = forms.HiddenInput()
+        form.fields['initiative'].widget = forms.HiddenInput()
         form.fields['strategic_goal'].widget = forms.HiddenInput()
-       
 
-     return form
+        if role == 'GM':
+            form.fields['receiver'].widget = forms.Select()
+            form.fields['receiver'].queryset = User.objects.filter(role__role_name__in=['M', 'CM'])
+            form.fields['strategic_goal'].widget = forms.Select()
+            form.fields['strategic_goal'].queryset = StrategicGoal.objects.all()
 
+        elif role in ['M', 'CM']:
+            form.fields['receiver'].widget = forms.Select()
+            form.fields['receiver'].queryset = User.objects.filter(department=user.department, role__role_name='E')
+
+            form.fields['initiative'].widget = forms.Select()
+            form.fields['initiative'].queryset = Initiative.objects.filter(
+                userinitiative__user__department=user.department
+            ).distinct()
+
+        elif role == 'E':
+            form.fields['initiative'].widget = forms.Select()
+            form.fields['initiative'].queryset = Initiative.objects.filter(userinitiative__user=user).distinct()
+
+        if self.request.GET.get('goal_id'):
+            form.fields['strategic_goal'].widget = forms.HiddenInput()
+            form.fields['receiver'].widget = forms.HiddenInput()
+            form.fields['initiative'].widget = forms.HiddenInput()
+
+        return form
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        goal_id = self.request.GET.get('goal_id')
+        if goal_id:
+            context['selected_goal'] = StrategicGoal.objects.get(id=goal_id)
+
+        return context
 
     def form_valid(self, form):
+        goal_id = self.request.GET.get('goal_id')
+        if goal_id:
+            form.instance.strategic_goal = StrategicGoal.objects.get(id=goal_id)
+            form.instance.receiver = None
+            form.instance.initiative = None
+
         self.object = form.save(sender=self.request.user)
-        if form.cleaned_data.get('initiative'):
-           form.instance.receiver = None
-        
         messages.success(self.request, "تم إرسال الملاحظة بنجاح", extra_tags="create")
         return super().form_valid(form)
+
+
 
 
 class UpdateNoteView(LoginRequiredMixin, LogMixin, UpdateView):

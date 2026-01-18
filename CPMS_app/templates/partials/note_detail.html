@@ -1,16 +1,16 @@
-<div class="max-w-3xl mx-auto">
+<div class="max-w-3xl mx-auto h-full flex flex-col overflow-hidden">
 
   <!-- Breadcrumbs -->
   <div class="text-gray-600 text-sm mt-2 mb-4">
-    <a href="/dashboard" class="hover:underline text-gray-600">لوحة التحكم</a> &gt;
-    <a href="/notes" class="hover:underline text-gray-600">الملاحظات</a> &gt;
-    <span>تفاصيل الملاحظة</span>
+    <a href="/dashboard" class="hover:underline text-gray-400">لوحة التحكم</a> &gt;
+    <a href="/notes" class="hover:underline text-gray-400">الملاحظات</a> &gt;
+    <span class="hover:underline text-gray-400">تفاصيل الملاحظة</span>
   </div>
 
   <div class="h-px bg-gray-100 w-1/2 mt-2 mb-4"></div>
 
   <!-- Note Card -->
-  <div class="bg-white p-4 rounded-lg shadow w-full space-y-2">
+  <div class="bg-white p-4 rounded-lg shadow w-full space-y-2 flex flex-col overflow-hidden">
 
     <!-- Meta (Header) -->
     <div class="space-y-2">
@@ -40,13 +40,14 @@
           <span class="text-gray-500">إلى:</span>
           {% if note.initiative %}
           {{ note.initiative.title }}
-          {% elif note.department %}
-          {{ note.department.name }}
+          {% if note.strategic_goal %}
+          {{ note.strategic_goal.goal_title }}
           {% else %}
           {% if note.receiver == request.user %}
           انت
           {% else %}
           {{ note.receiver.get_full_name }}
+          {% endif %}
           {% endif %}
           {% endif %}
         </div>
@@ -72,7 +73,7 @@
     </div>
 
 
-    <div class="space-y-3 max-h-[60vh] overflow-y-auto">
+    <div class="flex-1 overflow-y-auto pr-2 chat-scroll">
 
       {% for group in grouped_replies %}
       <div class="text-center text-xs text-gray-400 mb-2">
@@ -85,7 +86,7 @@
           {{ reply.sender.get_full_name }}
         </div>
 
-        <div class="chat-bubble relative
+        <div class="chat-bubble relative break-words  max-w-[75%]
                      {% if reply.sender == request.user %}
                        bg-[#698274]/40 text-gray-800
                      {% else %}
@@ -129,52 +130,57 @@
     {% endif %}
     {% endif %}
 
+    <div class="absolute bottom-16 left-0 right-0 h-6
+            bg-gradient-to-t from-white to-transparent pointer-events-none">
+    </div>
 
     <!-- Reply Box -->
- {% if can_reply %}
-<form method="post" action="{% url 'note_detail' note.pk %}" class="flex items-center gap-2 mt-4 px-2">
-  {% csrf_token %}
-  <input type="hidden" name="action" value="reply" />
 
-  <div class="flex items-center w-full rounded-full border border-gray-200 overflow-hidden bg-white">
-    <textarea
-      id="reply-text"
-      name="reply_content"
-      rows="1"
-      placeholder="اكتب ردك هنا..."
-      class="w-full resize-none px-4 py-2 text-sm outline-none bg-transparent"
-      oninput="toggleSendButton(this)"
-    ></textarea>
+    {% if can_reply %}
+    <form method="post" action="{% url 'note_detail' note.pk %}" class="flex items-center gap-2 px-2 sticky bottom-0">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="reply" />
 
-    <!-- Send Button -->
-    <button id="send-btn" type="submit"
-      class="p-2 rounded-full text-gray-400 transition-all duration-200"
-      disabled>
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
-        <path fill-rule="evenodd"
-          d="M10.293 2.293a1 1 0 011.414 0l6 6a1 1 0 01-1.414 1.414L12 5.414V17a1 1 0 11-2 0V5.414L4.707 9.707A1 1 0 013.293 8.293l6-6z"
-          clip-rule="evenodd" />
-      </svg>
-    </button>
-  </div>
-</form>
-{% endif %}
+      <textarea name="reply_content" rows="1" placeholder="اكتب ردك هنا..."
+        class="w-full resize-none rounded-full border border-gray-200 px-4 py-2 text-sm focus:outline-none focus:ring-0  break-words whitespace-pre-wrap"></textarea>
+
+      <button type="submit"
+        class="bg-[#00A399] text-white rounded-full px-4 py-2 text-sm  hover:bg-[#018077] text-white  transition-colors">
+        إرسال
+      </button>
+    </form>
+    {% endif %}
+
 
   </div>
 </div>
 
-<script>
-  function toggleSendButton(el) {
-    const btn = document.getElementById('send-btn');
-
-    if (el.value.trim().length > 0) {
-      btn.disabled = false;
-      btn.classList.remove('text-gray-400');
-      btn.classList.add('bg-[#00A399]', 'text-white', 'shadow-md');
-    } else {
-      btn.disabled = true;
-      btn.classList.remove('bg-[#00A399]', 'text-white', 'shadow-md');
-      btn.classList.add('text-gray-400');
-    }
+<style>
+  /* container */
+  .chat-scroll {
+    scrollbar-width: none;
   }
-</script>
+
+  .chat-scroll::-webkit-scrollbar {
+    width: 2.5px;
+  }
+
+  .chat-scroll::-webkit-scrollbar-thumb {
+    background-color: transparent;
+    border-radius: 9999px;
+    transition: background-color 0.25s ease;
+  }
+
+  .chat-scroll:hover {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(4, 104, 98, 0.45) transparent;
+  }
+
+  .chat-scroll:hover::-webkit-scrollbar-thumb {
+    background-color: rgba(4, 104, 98, 0.45);
+  }
+
+  .chat-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+</style>

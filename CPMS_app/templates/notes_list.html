@@ -8,10 +8,14 @@
     <!-- Sidebar -->
     <aside class="group w-16 hover:w-64 transition-all duration-300 border-r bg-gray-50 p-3 mt-2">
 
-        <a href="{% url 'note_create_modal' %}" hx-get="{% url 'note_create_modal' %}" hx-target="#note-form-container"
+        <!-- <a href="{% url 'note_create_modal' %}" hx-get="{% url 'note_create_modal' %}" hx-target="#note-form-container"
             hx-swap="innerHTML" onclick="document.getElementById('note-modal-toggle').checked = true;" class="flex items-center justify-center gap-3 bg-blue-500 text-white py-2 rounded-lg mb-6 font-semibold hover:bg-blue-600
                             shadow-md hover:shadow-lg transform hover:-translate-y-0.5
-                            transition duration-200 focus:ring-4 focus:ring-blue-200">
+                            transition duration-200 focus:ring-4 focus:ring-blue-200"> -->
+        <a href="{% url 'note_create_modal' %}" hx-get="{% url 'note_create_modal' %}" hx-target="#note-form-container"
+            hx-swap="innerHTML" onclick="document.getElementById('note-modal-toggle').checked = true;" class="flex items-center justify-center gap-3 bg-[#00A399] text-white py-2 rounded-lg mb-6 font-semibold hover:bg-[#018077]
+                            shadow-md hover:shadow-lg transform hover:-translate-y-0.5
+                            transition duration-200 focus:ring-4 focus:ring-[#018077]/30">
             <!-- chat plus icon -->
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -32,7 +36,7 @@
 
             <li>
                 <a href="{% url 'notes_list' %}?box=all-notes" class="mailbox-btn w-full flex items-center gap-3 px-3 py-2 rounded-full hover:bg-gray-100
-                    {% if current_box == 'all-notes' %} bg-blue-100 text-blue-800 {% endif %}">
+                    {% if current_box == 'all-notes' %} bg-[#00A399]/10 text-[#00A399]/100 {% endif %}">
                     <!-- menu icon -->
                     <svg class=" w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
@@ -46,7 +50,7 @@
             {% if request.user.role.role_name != 'GM' %}
             <li>
                 <a href="{% url 'notes_list' %}?box=received-notes" class="mailbox-btn relative w-full flex items-center gap-3 px-3 py-2 rounded-full hover:bg-gray-100
-                         {% if current_box == 'received-notes' %} bg-blue-100 text-blue-800 {% endif %}">
+                         {% if current_box == 'received-notes' %} bg-[#00A399]/10 text-[#00A399]/100{% endif %}">
 
                     <!-- inbox icon -->
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
@@ -75,10 +79,10 @@
             </li>
             {% endif %}
 
-
+            <!-- bg-blue-100 text-blue-800 -->
             <li>
                 <a href="{% url 'notes_list' %}?box=sent-notes" class="mailbox-btn w-full flex items-center gap-3 px-3 py-2 rounded-full hover:bg-gray-100
-                         {% if current_box == 'sent-notes' %} bg-blue-100 text-blue-800 {% endif %}">
+                         {% if current_box == 'sent-notes' %}bg-[#00A399]/10 text-[#00A399]/100 {% endif %}">
                     <!-- send icon -->
                     <svg class=" w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M22 2L11 13" />
@@ -91,7 +95,7 @@
             </li>
             <li>
                 <a href="{% url 'notes_list' %}?box=starred-notes" class="mailbox-btn w-full flex items-center gap-3 px-3 py-2 rounded-full hover:bg-gray-100
-                         {% if current_box == 'starred-notes' %} bg-blue-100 text-blue-800 {% endif %}">
+                         {% if current_box == 'starred-notes' %} bg-[#00A399]/10 text-[#00A399]/100{% endif %}">
                     <!-- star icon -->
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -130,9 +134,7 @@
                     hx-trigger="keyup changed delay:400ms" hx-target="#notes-list" hx-push-url="true" />
             </div>
 
-            {% if request.user.role.role_name != 'GM' %}
-            <!-- Filter button-->
-            <div class="relative">
+            <!-- <div class="relative">
                 <button id="dropdownDefaultButton"
                     class="flex flex-row-reverse items-center justify-between text-body bg-neutral-secondary-medium text-gray-500 hover:text-gray-800 hover:bg-neutral-tertiary-medium shadow-xs font-medium leading-5 rounded-base text-sm px-3 py-2 focus:outline-none gap-2 "
                     type="button">
@@ -146,7 +148,7 @@
                 <div id="dropdown"
                     class="absolute right-0  hidden bg-neutral-primary-medium border border-default-medium rounded-base shadow-lg w-32 overflow-hidden">
                     <ul class="p-2 text-sm text-body font-medium space-y-1">
-                        <!-- حسب المقروءة -->
+                    
                         <li>
                             <button type="button" data-filter="read"
                                 class="filter-btn block w-full text-right px-4 py-2 hover:bg-gray-100">مقروءة</button>
@@ -161,7 +163,6 @@
 
                         </li>
 
-                        <!-- حسب النجمة -->
                         <li>
                             <button type="button" data-filter="starred"
                                 class="filter-btn block w-full text-right px-4 py-2 hover:bg-gray-100">مميزة
@@ -173,22 +174,21 @@
                                 بنجمة</button>
                         </li>
 
-                        <!-- حسب الهدف -->
+                    
                         <li>
                             <button type="button" data-filter="goal"
                                 class="filter-btn block w-full text-right px-4 py-2 hover:bg-gray-100">حسب الهدف
                             </button>
                         </li>
-                        <!-- حسب المبادرة -->
+                      
                         <li>
                             <button type="button" data-filter="initiative"
                                 class="filter-btn block w-full text-right px-4 py-2 hover:bg-gray-100">حسب المبادرة
                             </button>
                         </li>
-                    </ul>
+                    </ul> 
                 </div>
-            </div>
-            {% endif %}
+            </div> -->
 
         </div>
 
@@ -206,20 +206,10 @@
     <!-- maybe delete this-->
 
     <!-- RIGHT: Message Preview -->
-    <section id="note-preview" class="hidden w-[60%] p-4 overflow-y-auto  bg-white border-l transition-all duration-300">
-        <p class="text-gray-400 text-center mt-20">
-            اختر رسالة لعرض محتواها
-        </p>
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-            class="icon icon-tabler icons-tabler-outline icon-tabler-inbox-off">
-            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-            <path
-                d="M8 4h10a2 2 0 0 1 2 2v10m-.593 3.422a2 2 0 0 1 -1.407 .578h-12a2 2 0 0 1 -2 -2v-12c0 -.554 .225 -1.056 .59 -1.418" />
-            <path d="M4 13h3l3 3h4l.987 -.987m2.013 -2.013h3" />
-            <path d="M3 3l18 18" />
-        </svg>
+    <section id="note-preview" class="hidden relative w-[60%] flex flex-col
+         p-4 bg-white border-l transition-all duration-300 overflow-hidden">
     </section>
+
 </div>
 
 <!-- Hidden checkbox controlling modal (DaisyUI) -->
