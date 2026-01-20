@@ -678,6 +678,9 @@ def create_kpi_view(request, initiative_id):
         if form.is_valid():
             kpi = form.save(commit=False)
             kpi.initiative = initiative
+            if kpi.start_value is None:
+                kpi.start_value = kpi.actual_value
+
             kpi.save()
             
             messages.success(request, 'تم إضافة مؤشر قياس أداء بنجاح',extra_tags='create')
