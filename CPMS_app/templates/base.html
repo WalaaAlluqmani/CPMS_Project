@@ -11,6 +11,8 @@
         <link rel="stylesheet" href="{% static 'CPMS_app/style.css' %}">
         <!-- Tailwind CSS -->
         <script src="https://cdn.tailwindcss.com"></script>
+        <!-- CHART JS -->
+        <script defer src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.min.js"></script>
         <!-- APP JS -->
         <script defer src="{% static 'CPMS_app/app.js' %}"></script>
 
@@ -25,7 +27,7 @@
             </div>
             <ul class="flex-1 mt-6 space-y-2">
                 <li>
-                    <a href="#"
+                    <a href="{% url 'dashboard' %}"
                         class="flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-green-100 hover:text-green-700 rounded-lg transition">
                         <span>لوحة التحكم</span>
                     </a>
@@ -51,9 +53,12 @@
             </ul>
             <!-- logout next -->
             <div class="p-6 border-t border-gray-200">
-                <a href="{% url 'logout' %}" class="flex items-center gap-3 text-gray-700 hover:text-red-600 transition">
-                    <span>تسجيل الخروج</span>
-                </a>
+                <form method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="flex items-center gap-3 text-gray-700 hover:text-red-600 transition">
+                        تسجيل الخروج
+                    </button>
+                </form>
             </div>
         </aside>
 
