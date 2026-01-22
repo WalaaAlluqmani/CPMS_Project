@@ -95,7 +95,7 @@ class StrategicPlan (models.Model):
         verbose_name = "StrategicPlan"
         verbose_name_plural = "StrategicPlans"
         ordering = ['-start_date'] 
-       
+
 
     def __str__(self):
         return self.plan_name
@@ -166,6 +166,7 @@ class KPI(models.Model): # 1 : M relationshp with Initiative (Many Side)
     unit = models.CharField(max_length=20)
     target_value = models.DecimalField(max_digits=18, decimal_places=2)
     actual_value = models.DecimalField(max_digits=18, decimal_places=2,null=True, blank=True)
+    start_value = models.DecimalField(max_digits=18, decimal_places=2,null=True, blank=True)
     initiative = models.ForeignKey(Initiative, on_delete=models.CASCADE)
     def __str__(self):
         return self.kpi
