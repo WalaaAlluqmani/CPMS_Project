@@ -3,11 +3,53 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 import json
 from django.forms.models import model_to_dict
 from django.db.models import Count, Q, Case, When, Value, IntegerField, Avg, Prefetch
-from .models import StrategicGoal, Initiative, Log, UserInitiative
+from .models import Note, StrategicGoal, Initiative, Log, UserInitiative
 from django.db.models import Prefetch
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models.functions import TruncMonth
 from django.utils import timezone
+
+
+def get_unread_notes_count(user):
+    '''
+    -  Returns unread notes count for the user   
+    -  Use: inside AllNotesView, and NoteDetailview
+    '''
+    
+    # GM never receives notes
+    if user.role.role_name == 'GM':
+        return 0
+
+    role = user.role.role_name
+
+    if role in ['M', 'CM']:
+        return (
+            Note.objects
+            .filter(
+                Q(receiver=user) |
+                Q(strategic_goal__department=user.department) |
+                Q(initiative__userinitiative__user=user),
+                parent_note__isnull=True
+            )
+            .exclude(sender=user)
+            .exclude(read_by=user)
+            .distinct()
+            .count()
+        )
+
+    # Employee
+    return (
+        Note.objects
+        .filter(
+            Q(receiver=user) |
+            Q(initiative__userinitiative__user=user),
+            parent_note__isnull=True
+        )
+        .exclude(sender=user)
+        .exclude(read_by=user)
+        .distinct()
+        .count()
+    )
 
 
 def get_changed_fields(old_data, new_data):

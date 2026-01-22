@@ -6,10 +6,11 @@ from django.urls import reverse_lazy, reverse
 from django.views.generic import ListView, DetailView, CreateView
 from django.views.generic.edit import UpdateView, DeleteView
 from django.http import HttpResponse, JsonResponse
-from django.forms import ModelForm
+from django.forms import BooleanField, ModelForm
 from django.forms.models import model_to_dict  
 from django.template.loader import render_to_string
-from django.db.models import Q, Case, When, Value, IntegerField
+from django.db.models import Q,F, Case,Exists, When, Value, IntegerField, OuterRef, Subquery, BooleanField,CharField
+from django.db.models.functions import Concat, Coalesce
 from django.db.models import Avg
 from django.contrib import messages
 from django.forms.models import model_to_dict
@@ -21,9 +22,10 @@ from django.core.exceptions import PermissionDenied
 from functools import wraps
 from .models import ( STATUS, Role, Department, User, StrategicPlan, StrategicGoal,
                         Initiative, UserInitiative, KPI, Note, Log)
-from .services import generate_KPIs,  create_log, get_plan_dashboard, calc_user_initiative_status
+from .services import generate_KPIs,  create_log, get_plan_dashboard, calc_user_initiative_status, get_unread_notes_count
 from .services import generate_KPIs,  create_log, get_plan_dashboard, filter_queryset, get_page_numbers, paginate_queryset
 from .forms import InitiativeForm, KPIForm, NoteForm, StrategicGoalForm, StrategicPlanForm, UserInitiativeForm
+from CPMS_app import models
 
 
 
@@ -783,7 +785,6 @@ class AllDepartmentsView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         return Department.objects.all()
 
-
 # ---------------------------
 #  StrategicPlan View
 # ---------------------------
@@ -1066,158 +1067,6 @@ class DeleteGoalView(LoginRequiredMixin, RoleRequiredMixin, LogMixin, DeleteView
 # ---------------------------
 #  Note View
 # ---------------------------
-# class AllNotesView(LoginRequiredMixin, ListView):
-#     '''
-#     - Displays a list of notes for the current user
-#     - GM sees only notes they sent
-#     - M and CM see notes they sent plus notes sent by GM in their department
-#     - E sees notes they sent and notes related to initiatives they are part of, or notes sent to them by their manager
-#     '''
-#     model = Note
-#     template_name = 'notes_list.html'
-#     context_object_name = 'notes'
-
-#     def get_queryset(self):
-#         user = self.request.user
-#         role = user.role.role_name
-#         note_box = self.request.GET.get('box', 'all-notes')
-#         filter_val = self.request.GET.get("filter")
-    
-#         if role == 'GM':
-#             # All notes sent by the General Manager
-#             qs = Note.objects.filter(sender=user)
-#         elif role in ['M','CM']:
-#             # All notes sent by the user and those received from the General Manager
-#             # return Note.objects.filter(user=user,department=user.department)
-#               qs = Note.objects.filter(sender=user) | Note.objects.filter(receiver=user) |Note.objects.filter(receiver__department=user.department)
-#         elif role == 'E':
-#             # All notes sent by the user and those received for the same initiative or sent to them by the manager
-#             qs = Note.objects.filter(sender=user)| Note.objects.filter(receiver=user) | Note.objects.filter(initiative__userinitiative__user=user).distinct()
-        
-#         if note_box == 'received-notes':
-#             qs = qs.filter(receiver=user)
-#         if note_box == 'sent-notes':
-#             qs = qs.filter(sender=user)
-#         if note_box == 'starred-notes':
-#             qs = qs.filter(is_starred=True)
-#         if filter_val == "read":
-#             qs = qs.filter(note_status='R')
-#         if filter_val == "starred":
-#             qs = qs.filter(is_starred=True)
-#         if filter_val == "unread":
-#             qs = qs.filter(note_status='U')
-#         if filter_val == "unstarred":
-#             qs = qs.filter(is_starred=False)
-
-
-#         queryset = filter_queryset(
-#           queryset=qs,
-#           request=self.request,
-#           search_fields=['title','content','sender__first_name','sender__last_name'],
-#           status_field=None,
-#           priority_field=None
-#         )
-
-#         return queryset.order_by('-created_at')
-    
-#     def post(self, request, *args, **kwargs):
-#         # HTMX star toggle
-#         if request.headers.get("HX-Request"):
-#             note_id = request.POST.get("note_id")
-#             note = get_object_or_404(Note, id=note_id)
-
-#             note.is_starred = not note.is_starred
-#             note.save()
-
-#             return render(request, "partials/star_icon.html", {
-#                 "note": note
-#             })
-
-#         return super().get(request, *args, **kwargs)
-
-
-#     def get_context_data(self, **kwargs):
-#         context = super().get_context_data(**kwargs)
-#         user = self.request.user
-
-#         #unread notes
-#         unread_count = Note.objects.filter(receiver=user, note_status='U')
-#         context['unread_count'] = unread_count
-#         return context
-    
-#     def render_to_response(self, context, **response_kwargs):
-#       if self.request.headers.get("HX-Request"):
-#         return render(self.request, "partials/notes_table_rows.html" )
-      
-#       return super().render_to_response(context, **response_kwargs)
-    
-
-# class NoteDetailsview(LoginRequiredMixin, DetailView):
-#     '''
-#     - Shows details of a single note
-#     - Handles replies and edits via POST
-#     - Returns unread count for HTMX if requested
-#     '''
-#     model = Note
-#     template_name = 'partials/note_detail.html'
-#     context_object_name = 'note'
-
-#     #chane notes status when user open it
-#     def get_object(self, queryset=None):
-#         note = super().get_object(queryset)
-#         if note.note_status == 'U' and note.receiver == self.request.user:
-#             note.note_status = 'R'
-#             note.save()
-#         return note
-    
-#     #who can reply notes
-#     def can_reply(self, note, user):
-#         if note.sender.role.role_name == 'GM':  #if GM is sender noone can reply this note
-#             return False
-#         return note.receiver == user or (note.initiative and user in note.initiative.user_set.all())
-
-#     def get_context_data(self, **kwargs):
-#         context = super().get_context_data(**kwargs)
-#         note = self.object
-#         user = self.request.user
-
-#         context['replies'] = note.replies.all().order_by('created_at')
-#         context['can_reply'] = self.can_reply(note, user)
-#         return context
-
-#     def post(self, request, *args, **kwargs):
-#         note = self.get_object()
-#         user = request.user
-
-#         # count unread notes
-#         if request.headers.get("HX-Request"):
-#             unread_count = Note.objects.filter(receiver=user, note_status='U').count()
-#             html = f'<span id="unread-badge" class="ml-2 text-sm font-semibold text-red-500">{unread_count}</span>'
-#             return HttpResponse(html)
-
-#         # new reply
-#         if 'reply_content' in request.POST and self.can_reply(note, user):
-#             content = request.POST['reply_content'].strip()
-#             if content:
-#                 Note.objects.create(
-#                     title=f"Reply to: {note.title}",
-#                     content=content,
-#                     sender=user,
-#                     receiver=note.sender,  
-#                     parent_note=note
-#                 )
-
-#         #edit reply       
-#         if 'edit_reply_id' in request.POST:
-#             reply_id = request.POST['edit_reply_id']
-#             reply = get_object_or_404(Note, pk=reply_id, sender=user)
-#             new_content = request.POST.get('edit_content', '').strip()
-#             if new_content:
-#                 reply.content = new_content
-#                 reply.save()
-
-#         return redirect('note_detail', pk=note.pk)
-
 class AllNotesView(LoginRequiredMixin, ListView):
     '''
     - Displays a list of notes for the current user
@@ -1234,111 +1083,249 @@ class AllNotesView(LoginRequiredMixin, ListView):
         role = user.role.role_name
         current_box = self.request.GET.get('box', 'all-notes')
         current_filter = self.request.GET.get('filter', '')
-    
+
+        # GM sees only notes he sent
         if role == 'GM':
             qs = Note.objects.filter(sender=user)
-        elif role in ['M','CM']:
-            qs = Note.objects.filter( Q(sender=user) | Q(receiver=user)|Q(strategic_goal__department=user.department)|Q(initiative__userinitiative__user=user),parent_note__isnull=True)
+
+        # Manager roles
+        elif role in ['M', 'CM']:
+            qs = Note.objects.filter(
+                Q(sender=user) |                     # notes sent by user
+                Q(receiver=user) |                   # notes received by user
+                Q(strategic_goal__department=user.department) |  # same department
+                Q(initiative__userinitiative__user=user),        # related initiatives
+                parent_note__isnull=True
+            ).distinct()
+
+        # Employee
         elif role == 'E':
-         qs = Note.objects.filter( Q(sender=user) | Q(receiver=user) | Q(initiative__userinitiative__user=user),parent_note__isnull=True).distinct()
+            qs = Note.objects.filter(
+                Q(sender=user) |                     # notes sent by user
+                Q(receiver=user) |                   # notes received by user
+                Q(initiative__userinitiative__user=user),  # initiative notes
+                parent_note__isnull=True
+            ).distinct()
+        else:
+            qs = Note.objects.none()
 
-         
-        if current_box == 'received-notes':
-             qs = qs.filter(Q(receiver=user) | Q(initiative__userinitiative__user=user) |Q(strategic_goal__department=user.department))
-             if current_filter == "read":
-                qs = qs.filter(note_status='R')
-             if current_filter == "unread":
-                 qs = qs.filter(note_status='U')
+       
+        # annotate last sender (for unread)
+        last_note_qs = Note.objects.filter(
+           Q(parent_note=OuterRef('pk')) | Q(pk=OuterRef('pk'))).order_by('-created_at')
+        qs = qs.annotate(
+        last_note_id=Subquery(last_note_qs.values('pk')[:1]),
+        last_note_created_at=Subquery(last_note_qs.values('created_at')[:1]),
+        last_sender_id=Subquery(last_note_qs.values('sender_id')[:1]),
+        last_receiver_id=Subquery(last_note_qs.values('receiver_id')[:1])
+        )
+        
+        # annotate participant (receiver/goal/initiative)
+        initiative_exists = UserInitiative.objects.filter(
+            initiative=OuterRef('initiative_id'),
+            user=user
+         )
+        
+        qs = qs.annotate(
+            is_user_participant=Case(
+                When(sender=user, then=Value(True)),
+                When(receiver=user, then=Value(True)),
+                When(Exists(initiative_exists), then=Value(True)),
+                When(strategic_goal__department=user.department, then=Value(True)),
+                default=Value(False),
+                output_field=BooleanField(),
+                )
+        )
 
+        qs = qs.annotate(
+        is_inbox=Case(
+            When(
+                Q(is_user_participant=True) &
+                ~Q(last_sender_id=user.id),
+                then=Value(True)
+            ),
+            default=Value(False),
+            output_field=BooleanField(),
+        )
+    )
+
+        qs = qs.annotate(
+        is_sent=Case(
+            When(
+                Q(is_user_participant=True) & Q(last_sender_id=user.id),
+                then=Value(True)),
+            default=Value(False),
+            output_field=BooleanField(),
+        )
+    )
+        qs = qs.annotate(
+           display_user_id=Case(
+           When(is_inbox=True, then=F('last_sender_id')),
+           When(is_sent=True, then=Value(user.id)),
+          default=F('sender_id'),
+          output_field=IntegerField()
+          )
+    )
+        qs = qs.annotate(
+             display_user_name=Subquery(
+                 User.objects.filter(
+                 id=OuterRef('display_user_id')
+                 ).annotate(
+                      full_name=Coalesce(
+                        Concat( F('first_name'), Value(' '), F('last_name'), output_field=CharField()),
+                        F('first_name'),
+                        F('username'),
+                        )
+                 ).values('full_name')[:1]
+             )
+        )
+
+        qs = qs.annotate(
+             is_reply=Case(
+                 When(
+                      Q(is_sent=True) & Q(last_sender_id=user.id) & ~Q(sender=user),
+                        then=Value(True)
+                        ),
+                default=Value(False),
+                output_field=BooleanField()
+                )
+            )
+        
+        reply_exists = Note.objects.filter(parent_note=OuterRef('pk'))
+        qs = qs.annotate(
+            has_replies=Exists(reply_exists)
+            )
+
+        # Received notes
+        if current_box == 'received-notes': 
+            qs = qs.filter(is_inbox=True)
+
+            if current_filter == "read":
+                qs = qs.filter(read_by=user)  # read notes
+
+            elif current_filter == "unread":
+                qs = qs.exclude(read_by=user)  # unread notes
+
+        # Sent notes
         if current_box == 'sent-notes':
-             qs = qs.filter(Q(sender=user))
+            qs = qs.filter(is_sent=True)
             
+        # Starred notes box
         if current_box == 'starred-notes':
             qs = qs.filter(is_starred=True)
 
         # Filters
         if current_filter == "starred":
             qs = qs.filter(is_starred=True)
+
         if current_filter == "unstarred":
             qs = qs.filter(is_starred=False)
-            
+
         if current_filter == "goal":
             qs = qs.filter(strategic_goal__isnull=False)
-            if role in ['M', 'CM']:
-                qs = qs.filter(strategic_goal__department=user.department)
-        if current_filter == "initiative":
-            qs = qs.filter(initiative__userinitiative__user=user)
 
-        queryset = filter_queryset(
-          queryset=qs,
-          request=self.request,
-          search_fields=['title','sender__first_name','sender__last_name'],
-          status_field=None,
-          priority_field=None
+        if current_filter == "initiative":
+            qs = qs.filter(initiative__isnull=False)
+
+        # Search field
+        qs = filter_queryset(
+            queryset=qs,
+            request=self.request,
+            search_fields=['title', 'sender__first_name', 'sender__last_name'],
+            status_field=None,
+            priority_field=None
         )
 
-        return queryset.order_by('-created_at')
-    
+        qs = qs.order_by('-last_note_created_at')
+        return qs
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['today'] = timezone.localdate()
+        context['yesterday'] = timezone.localdate() - timezone.timedelta(days=1)
         user = self.request.user
-        
-        # unread count
-        context['unread_count'] = Note.objects.filter(receiver=user, note_status='U').count()
 
-        # mark unread notes
-        notes = context.get('notes', [])
-        for note in notes:
-            note.unread = note.receiver == user and note.note_status == 'U'
+        # Count unread notes
+        context['unread_count'] = get_unread_notes_count(user)
 
-        context['notes'] = notes
+        # Mark unread notes
+        for note in context['notes']:
+    
+            #last sender in chat
+           note.is_sent_box = note.is_sent
+           note.is_received_box = note.is_inbox
 
-        # messages for box, filter, and search fields
+           note.unread = (
+                note.last_sender_id != user.id 
+                 and
+               ( note.receiver == user or
+                 note.initiative or
+                 note.strategic_goal
+                )
+                and
+                 not note.read_by.filter(id=user.id).exists())
+           
+           # last sender name
+           last_sender = User.objects.filter(id=note.last_sender_id).first()
+           note.last_sender = last_sender
+
+           # display sender
+           if note.has_replies:
+               if last_sender.id == user.id:
+                   note.display_sender = "رد: أنت"
+               else:
+                   note.display_sender = f"رد: {last_sender.get_full_name()}"
+           else:
+                 # no replies → show normal sender
+                if last_sender.id == user.id:
+                   note.display_sender = "أنت"
+                else:
+                   note.display_sender = note.sender.get_full_name()
+
+
+
+       # box/filter/search values
         current_box = self.request.GET.get('box', 'all-notes')
-        current_filter = self.request.GET.get('filter','all')
-        search = self.request.GET.get('search','')
-        
+        current_filter = self.request.GET.get('filter', 'all')
+        search = self.request.GET.get('search', '')
+
         context['current_box'] = current_box
         context['current_filter'] = current_filter
         context['search'] = search
 
+        # Set an empty message for each filter/box when the queryset is empty
         empty_message = "لا توجد ملاحظات لعرضها"
-        if not self.object_list.exists():
-        
-         # search
-         if search:
-          empty_message = "لا توجد نتائج مطابقة لبحثك"
+        if not context['notes']:
+            if search:
+                empty_message = "لا توجد نتائج مطابقة لبحثك"
+            elif current_filter == 'read':
+                empty_message = "لا توجد ملاحظات مقروءة"
+            elif current_filter == 'unread':
+                empty_message = "لا توجد ملاحظات غير مقروءة"
+            elif current_filter == 'initiative':
+                empty_message = "لا توجد ملاحظات مرتبطة بمبادرات"
+            elif current_filter == 'goal':
+                empty_message = "لا توجد ملاحظات مرتبطة بأهداف"
+            elif current_filter == 'starred':
+                empty_message = "لا توجد ملاحظات مميزة بنجمة"
+            elif current_filter == 'unstarred':
+                empty_message = "لا توجد ملاحظات غير مميزة بنجمة"
+            elif current_box == 'sent-notes':
+                empty_message = "لم ترسل أي ملاحظات بعد"
+            elif current_box == 'received-notes':
+                empty_message = "لا توجد ملاحظات واردة"
+            elif current_box == 'starred-notes':
+                empty_message = "لا توجد ملاحظات مميزة بنجمة"
 
-         # filters
-         elif current_filter == 'read':
-            empty_message = "لا توجد ملاحظات مقروءة"
-         elif current_filter == 'unread':
-            empty_message = "لا توجد ملاحظات غير مقروءة"
-         elif current_filter == 'initiative':
-            empty_message = "لا توجد ملاحظات مرتبطة بمبادرات"
-         elif current_filter == 'goal':
-            empty_message = "لا توجد ملاحظات مرتبطة بأهداف"
-         elif current_filter == 'starred':
-            empty_message = "لا توجد ملاحظات مميزة بنجمة"
-         elif current_filter == 'unstarred':
-            empty_message = "لا توجد ملاحظات غير مميزة بنجمة"
-
-         # note box
-         elif current_box == 'sent-notes':
-            empty_message = "لم ترسل أي ملاحظات بعد"
-         elif current_box == 'received-notes':
-            empty_message = "لا توجد ملاحظات واردة"
-         elif current_box == 'starred-notes':
-            empty_message = "لا توجد ملاحظات مميزة بنجمة"
-    
         context['empty_message'] = empty_message
 
         return context
     
     def render_to_response(self, context, **response_kwargs):
-        if self.request.headers.get("HX-Request"):
-            return render(self.request, "partials/notes_table_rows.html", context)
-        return super().render_to_response(context, **response_kwargs)
+         if self.request.headers.get("HX-Request"):
+             return render(self.request, "partials/notes_table_rows.html", context)
+         return super().render_to_response(context, **response_kwargs)
+
 
 
 class NoteDetailsview(LoginRequiredMixin, DetailView):
@@ -1350,19 +1337,24 @@ class NoteDetailsview(LoginRequiredMixin, DetailView):
     def get_object(self, queryset=None):
         note = super().get_object(queryset)
         user = self.request.user
-
-        if note.note_status == 'U' and note.receiver == user:
-             note.note_status = 'R'
-             note.save()
-        return note
    
+        # Mark this note as read by the current user
+        if not note.read_by.filter(id=user.id).exists():
+            note.read_by.add(user)
+
+        return note
+            
+    
     def can_reply(self, note, user):
-        if note.sender.role.role_name == 'GM':  # GM sender cannot be replied
+        # GM notes cannot be replied to
+        if note.sender.role.role_name == 'GM':  
             return False
         
+        # Allow reply if the user is part of the initiative
         if note.initiative:
            return UserInitiative.objects.filter(initiative=note.initiative, user=user).exists()
         
+        # Allow reply if the user is sender or receiver
         return note.receiver == user or note.sender == user
     
     def get_context_data(self, **kwargs):
@@ -1403,119 +1395,55 @@ class NoteDetailsview(LoginRequiredMixin, DetailView):
             "note": note
         })
 
-    # Unread Count (HTMX)
+    # Return unread count (HTMX)
      if action == "unread_count" and request.headers.get("HX-Request"):
-      unread_count = Note.objects.filter(
-        receiver=request.user,
-        note_status='U'
-     ).count()
+        unread_count = get_unread_notes_count(user)
+        return HttpResponse(unread_count)
 
-      if unread_count == 0:
-        return HttpResponse("""
-            <span id="unread-dot" class="hidden"></span>
-            <span id="unread-badge" class="hidden"></span>""")
+        # if unread_count == 0:
+        #   return HttpResponse("""
+        #     <span id="unread-dot" class="hidden"></span>
+        #     <span id="unread-badge" class="hidden"></span>""")
 
-      return HttpResponse(f"""
-        <span id="unread-dot"
-              class="absolute top-[10px] right-[10px]
-                     w-2 h-2 bg-red-500 rounded-full group-hover:hidden">
-        </span>
-        <span id="unread-badge"
-              class="hidden group-hover:inline whitespace-nowrap
-                     ml-2 text-xs font-semibold text-red-500
-                     bg-red-100 px-2 py-1 rounded-full">
-            {unread_count}
-        </span> """)
+        # return HttpResponse(f"""
+        #   <span id="unread-dot"
+        #       class="absolute top-[10px] right-[10px]
+        #              w-2 h-2 bg-red-500 rounded-full group-hover:hidden">
+        #   </span>
+        #   <span id="unread-badge"
+        #       class="hidden group-hover:inline whitespace-nowrap
+        #              ml-2 text-xs font-semibold text-red-500
+        #              bg-red-100 px-2 py-1 rounded-full">
+        #      {unread_count}
+        #   </span> """)
 
-    # Reply
+    # Add a reply (HTMX)
      if action == "reply" and self.can_reply(note, user) and request.headers.get("HX-Request"):
         content = request.POST.get("reply_content", "").strip()
+        receiver = None
+
+        if note.receiver:
+           receiver = note.receiver if note.sender == user else note.sender
+
         if content:
            reply = Note.objects.create(
             content=content,
+            receiver=receiver,
             sender=user,
             parent_note=note,
-            initiative=note.initiative
+            initiative=note.initiative,
+            strategic_goal=note.strategic_goal
         )
+
+        # make parent note unread again for everyone
+        note.read_by.clear()
+        note.read_by.add(user)
 
         return render(request, "partials/note_chat_message.html", {
             "reply": reply
         })
     
      return HttpResponse(status=204)
-
-
-    # #  Edit Reply
-    #  if action == "edit_reply":
-    #     reply_id = request.POST.get("edit_reply_id")
-    #     reply = get_object_or_404(Note, pk=reply_id, sender=user)
-
-    #     new_content = request.POST.get("edit_content", "").strip()
-    #     if new_content:
-    #         reply.content = new_content
-    #         reply.save()
-
-    #     return redirect('note_detail', pk=note.pk)
-
-    # Fallback
-    
-
-
-# class CreateNoteView(LoginRequiredMixin, LogMixin, CreateView):
-#     '''
-#     - Allows creating a new note
-#     - Sets sender as current user
-#     - Receiver options filtered based on sender's role
-#     '''
-#     model = Note
-#     form_class = NoteForm
-#     template_name = 'partials/note_form.html'
-#     success_url = reverse_lazy('notes_list')
-
-#     def get_form_kwargs(self):
-#         kwargs = super().get_form_kwargs()
-#         kwargs['user'] = self.request.user  
-#         return kwargs
-
-#     # This is to set the receiver's name from a custom dropdown
-#     def get_form(self, form_class=None):
-#      form = super().get_form(form_class)
-#      user = self.request.user
-#      role = user.role.role_name
-
-#      form.fields['receiver'].required = False
-#      form.fields['initiative'].required = False
-#      form.fields['strategic_goal'].required = False
-
-#      if role == 'GM':
-#         form.fields['receiver'].queryset = User.objects.filter(role__role_name__in=['M', 'CM'])
-#         form.fields['strategic_goal'].queryset = StrategicGoal.objects.all()
-#         form.fields['initiative'].queryset = Initiative.objects.none()
-
-#      elif role in ['M', 'CM']:
-#         form.fields['receiver'].queryset = User.objects.filter(department=user.department, role__role_name='E')
-#         form.fields['initiative'].queryset = Initiative.objects.filter(userinitiative__user__department=user.department).distinct()
-#         form.fields['strategic_goal'].queryset = StrategicGoal.objects.none()
-
-#      elif role == 'E':
-#         initiatives = Initiative.objects.filter(userinitiative__user=user).distinct()
-#         form.fields['initiative'].queryset = initiatives
-
-
-#         form.fields['receiver'].widget = forms.HiddenInput()
-#         form.fields['strategic_goal'].widget = forms.HiddenInput()
-       
-
-#      return form
-
-
-#     def form_valid(self, form):
-#         self.object = form.save(sender=self.request.user)
-#         if form.cleaned_data.get('initiative'):
-#            form.instance.receiver = None
-        
-#         messages.success(self.request, "تم إرسال الملاحظة بنجاح", extra_tags="create")
-#         return super().form_valid(form)
 
 
 class CreateNoteView(LoginRequiredMixin, LogMixin, CreateView):
@@ -1558,11 +1486,6 @@ class CreateNoteView(LoginRequiredMixin, LogMixin, CreateView):
         elif role == 'E':
             form.fields['initiative'].queryset = Initiative.objects.filter(userinitiative__user=user).distinct()
 
-        # if self.request.GET.get('goal_id'):
-        #     form.fields['strategic_goal'].widget = forms.HiddenInput()
-        #     form.fields['receiver'].widget = forms.HiddenInput()
-        #     form.fields['initiative'].widget = forms.HiddenInput()
-
         return form
     
     def get_context_data(self, **kwargs):
@@ -1584,8 +1507,6 @@ class CreateNoteView(LoginRequiredMixin, LogMixin, CreateView):
         self.object = form.save(sender=self.request.user)
         messages.success(self.request, "تم إرسال الملاحظة بنجاح", extra_tags="create")
         return super().form_valid(form)
-
-
 
 
 class UpdateNoteView(LoginRequiredMixin, LogMixin, UpdateView):

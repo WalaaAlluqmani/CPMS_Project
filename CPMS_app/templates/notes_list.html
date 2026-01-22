@@ -217,7 +217,6 @@
         </div>
 
         <!-- Notes List -->
-        <!-- <div class="overflow-y-auto flex-1 overflow-hidden" id="notes-list"> -->
         <div id="notes-list" class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
             <table class="w-full">
                 <tbody id="notes-tbody" class="w-full text-sm">
@@ -227,13 +226,7 @@
         </div>
     </section>
 
-
-    <!-- maybe delete this-->
-
-    <!-- RIGHT: Message Preview -->
-    <!-- <section id="note-preview" class="hidden relative w-[60%] flex flex-col flex-1 min-h-0
-         p-4 bg-white border-l transition-all duration-300 overflow-hidden">
-    </section> -->
+    <!-- Notes Preview -->
     <section id="note-preview"
         class="hidden relative w-[55%] flex flex-col min-h-0 overflow-hidden border-l transition-all duration-300">
 
@@ -292,19 +285,30 @@
         messages.classList.add('flex-1');
     }
 
-    const btn = document.getElementById("dropdownDefaultButton");
+    const dropdownBtn = document.getElementById("dropdownDefaultButton");
     const icon = document.getElementById("dropdownIconfilter");
+    const dropdown = document.getElementById("dropdown");
 
-    btn.addEventListener("click", () => {
+    let filterActive = false;
 
-        if (icon.getAttribute("fill") === "none") {
-            icon.setAttribute("fill", "#00A399");
-            icon.setAttribute("stroke", "#00A399");
-        } else {
-            icon.setAttribute("fill", "none");
-            icon.setAttribute("stroke", "currentColor");
-        }
+    document.querySelectorAll(".filter-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const filter = btn.dataset.filter;
+
+            if (filter === "all") {
+                filterActive = false;
+                icon.setAttribute("fill", "none");
+                icon.setAttribute("stroke", "currentColor");
+            } else {
+                filterActive = true;
+                icon.setAttribute("fill", "#00A399");
+                icon.setAttribute("stroke", "#00A399");
+            }
+
+        });
     });
+
+
 
     function initNoteForm() {
         const sendType = document.getElementById("send-type");

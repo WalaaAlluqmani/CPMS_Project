@@ -122,9 +122,9 @@
     });
   }
 
-  // Scroll فقط بعد إضافة رد جديد
+  
   document.body.addEventListener("htmx:afterSwap", function (evt) {
-    // إذا الهدف كان replies-container
+   
     if (evt.detail.target.id === "replies-container") {
       scrollToBottom();
     }
@@ -133,7 +133,7 @@
       if (textarea) textarea.value = "";
     }
 
-  });
+  }); 
 
 
 
