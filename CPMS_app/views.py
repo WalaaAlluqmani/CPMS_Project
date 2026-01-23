@@ -9,8 +9,9 @@ from django.http import HttpResponse, JsonResponse
 from django.forms import BooleanField, ModelForm
 from django.forms.models import model_to_dict  
 from django.template.loader import render_to_string
-from django.db.models import Q,F, Case,Exists, When, Value, IntegerField, OuterRef, Subquery, BooleanField,CharField
-from django.db.models.functions import Concat, Coalesce, Avg, Count
+from django.db.models import Q,F, Case,Exists, When, Value, IntegerField, OuterRef, Subquery, BooleanField,CharField, Avg, Count
+from django.db.models.functions import Concat, Coalesce
+from django.db.models import Q, Case, When, Value, IntegerField
 from django.contrib import messages
 from django.contrib.auth import login, get_user_model
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
