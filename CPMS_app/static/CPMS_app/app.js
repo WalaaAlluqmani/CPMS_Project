@@ -661,8 +661,61 @@ function stackedBarChart(data, id) {
     });
 }
 
+///////// LINE CHART \\\\\\\\\
+function lineChart(data, id) {
+    const canvas = document.getElementById(id);
+    if (!canvas || !data) return;
+
+    const ctx = canvas.getContext('2d');
+
+    // get labels (dates) from first dept
+    const labels = data[Object.keys(data)[0]].map(d => d.date);
+
+    // prepare datasets
+    const datasets = Object.keys(data).map((dept, index) => {
+        const colors = ['#F2C75C', '#E59256', '#A13525', '#00685E', '#CBD5E1', '#93C5FD', '#FCA5A5', '#86EFAC'];
+        return {
+            label: dept,
+            data: data[dept].map(d => d.avg),
+            borderColor: colors[index % colors.length],
+            backgroundColor: colors[index % colors.length],
+            tension: 0.3,
+            fill: false,
+            pointRadius: 3,
+            pointHoverRadius: 5,
+            borderWidth: 2
+        };
+    });
+
+    new Chart(ctx, {
+        type: 'line',
+        data: { labels: labels, datasets: datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', rtl: true },
+                tooltip: { mode: 'index', intersect: false }
+            },
+            scales: {
+                y: { beginAtZero: true, max: 100 },
+                x: {
+                    ticks: { autoSkip: true, maxRotation: 45, minRotation: 0 },
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+}
 
 
+// --- usage ---
+if (document.getElementById('line-chart-data')){
+    const lineChartData = JSON.parse(document.getElementById('line-chart-data').textContent);
+    if (lineChartData && Object.keys(lineChartData).length > 0) {
+        lineChart(lineChartData, 'lineChart');
+    }
+}
 // donut chart labels and data
 if (document.getElementById('donut-chart-labels')){
     const donutChartLabels = JSON.parse(document.getElementById('donut-chart-labels').textContent);

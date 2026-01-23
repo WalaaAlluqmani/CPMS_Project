@@ -1,6 +1,7 @@
 from itertools import groupby
 from django import forms
 from django.utils import timezone
+from django.utils.timezone import now, timedelta
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy, reverse
 from django.views.generic import ListView, DetailView, CreateView, TemplateView
@@ -21,12 +22,11 @@ from django.core.exceptions import PermissionDenied
 from functools import wraps
 from .forms import InitiativeForm, KPIForm, NoteForm, StrategicGoalForm, StrategicPlanForm, UserInitiativeForm
 from .models import ( STATUS, Role, Department, User, StrategicPlan, StrategicGoal,
-                        Initiative, UserInitiative, KPI, Note, Log)
+                        Initiative, UserInitiative, KPI, Note, Log, ProgressLog)
 from .services import ( generate_KPIs,  create_log, get_plan_dashboard, calc_user_initiative_status, 
                         filter_queryset, get_page_numbers, paginate_queryset, status_count, avg_calculator, 
                         calc_delayed, kpi_filter, weight_initiative, get_unread_notes_count)
 
-from .forms import InitiativeForm, KPIForm, NoteForm, StrategicGoalForm, StrategicPlanForm, UserInitiativeForm
 
 
 
@@ -292,6 +292,34 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             # LINE CHART -> departments progress 
             
             
+            days = [ (now() - timedelta(days=i)).date() for i in range(29, -1, -1) ]  # oldest -> newest
+
+            chart_data = {}
+
+            for dept in departments:
+                logs = ProgressLog.objects.filter(
+                    user__department=dept,
+                    timestamp__gte=days[0]
+                ).order_by('timestamp')
+
+                # group by day
+                daily_avg = {}
+                for log in logs:
+                    day = log.timestamp.date()
+                    daily_avg.setdefault(day, []).append(log.progress)
+
+                # make sure all 30 days are present
+                chart_data[dept.department_name] = []
+                for day in days:
+                    if day in daily_avg:
+                        avg = sum(daily_avg[day]) / len(daily_avg[day])
+                    else:
+                        avg = 0  # or None if you want gaps in the line
+                    chart_data[dept.department_name].append({'date': day, 'avg': avg})
+
+            context['line_chart_data'] = chart_data
+            context['chart_days'] = days  # optional, if you want x-axis labels
+
             
             context['plans'] = StrategicPlan.objects.all()  #  plans
             context['goals'] = StrategicGoal.objects.all()  #  goals
@@ -803,6 +831,13 @@ def add_progress(request, initiative_id):
         form = UserInitiativeForm(request.POST, instance=user_initiative)
         if form.is_valid():
             form.save()
+            ProgressLog.objects.create(
+                user=user,
+                initiative=initiative,
+                department=user.department,
+                progress=user_initiative.progress
+            )
+
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                 return JsonResponse({'success': True})
             
