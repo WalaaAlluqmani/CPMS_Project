@@ -185,7 +185,6 @@ class Note (models.Model):
     strategic_goal = models.ForeignKey(StrategicGoal, null=True, blank=True, on_delete=models.CASCADE, related_name="notes")
     parent_note = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE, related_name='replies')
     created_at =  models.DateTimeField(auto_now_add=True, null=True)
-    last_activity_at = models.DateTimeField(auto_now_add=True, null=True)
     read_by = models.ManyToManyField(User, related_name='read_notes', null=True, blank=True)
     is_starred = models.BooleanField(default=False)
 

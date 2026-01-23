@@ -250,23 +250,35 @@
         </div>
     </div>
 </div>
-
 <script>
+    /* ===============================
+       فتح الملاحظة عند الضغط
+    ================================ */
     document.body.addEventListener('click', function (e) {
         const row = e.target.closest('.note-row');
         if (!row) return;
 
+        // منع الفتح إذا ضغط على زر النجمة
         if (e.target.closest('.star-btn')) return;
 
-        htmx.ajax('GET', `/notes/${row.dataset.id}/detail/`, {
+        const noteId = row.dataset.id;
+
+        htmx.ajax('GET', `/notes/${noteId}/detail/`, {
             target: "#note-preview > div",
             swap: "innerHTML"
         });
 
+        const url = new URL(window.location);
+        url.searchParams.set("note", noteId);
+        window.history.pushState({}, "", url);
+
+
+        highlightActive(row);
         openPreview();
     });
 
 
+    
     function openPreview() {
         const messages = document.getElementById('messages-section');
         const preview = document.getElementById('note-preview');
@@ -276,6 +288,8 @@
         messages.classList.add('w-[45%]');
     }
 
+
+    
     function closePreview() {
         const messages = document.getElementById('messages-section');
         const preview = document.getElementById('note-preview');
@@ -285,10 +299,34 @@
         messages.classList.add('flex-1');
     }
 
-    const dropdownBtn = document.getElementById("dropdownDefaultButton");
-    const icon = document.getElementById("dropdownIconfilter");
-    const dropdown = document.getElementById("dropdown");
 
+    function highlightActive(activeRow) {
+        document.querySelectorAll('.note-row').forEach(row => {
+            row.classList.remove('bg-[#00A399]/10');
+        });
+
+        activeRow.classList.add('bg-[#00A399]/10');
+    }
+
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const params = new URLSearchParams(window.location.search);
+        const noteId = params.get("note");
+
+        if (!noteId) return;
+
+        const noteRow = document.querySelector(
+            `.note-row[data-id="${noteId}"]`
+        );
+
+        if (noteRow) {
+            noteRow.click();
+        }
+    });
+
+
+
+    const icon = document.getElementById("dropdownIconfilter");
     let filterActive = false;
 
     document.querySelectorAll(".filter-btn").forEach(btn => {
@@ -297,14 +335,13 @@
 
             if (filter === "all") {
                 filterActive = false;
-                icon.setAttribute("fill", "none");
-                icon.setAttribute("stroke", "currentColor");
+                icon?.setAttribute("fill", "none");
+                icon?.setAttribute("stroke", "currentColor");
             } else {
                 filterActive = true;
-                icon.setAttribute("fill", "#00A399");
-                icon.setAttribute("stroke", "#00A399");
+                icon?.setAttribute("fill", "#00A399");
+                icon?.setAttribute("stroke", "#00A399");
             }
-
         });
     });
 
@@ -345,14 +382,13 @@
         sendType.dispatchEvent(new Event("change"));
     }
 
+
     document.body.addEventListener("htmx:afterSwap", function (e) {
         if (e.target.id === "note-form-container") {
             document.getElementById('note-modal-toggle').checked = true;
-            initNoteForm()
+            initNoteForm();
         }
     });
-
-
 </script>
 
 {% endblock %}

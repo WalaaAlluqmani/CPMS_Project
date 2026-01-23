@@ -22,122 +22,11 @@ from django.core.exceptions import PermissionDenied
 from functools import wraps
 from .models import ( STATUS, Role, Department, User, StrategicPlan, StrategicGoal,
                         Initiative, UserInitiative, KPI, Note, Log)
-from .services import generate_KPIs,  create_log, get_plan_dashboard, calc_user_initiative_status, get_unread_notes_count
-from .services import generate_KPIs,  create_log, get_plan_dashboard, filter_queryset, get_page_numbers, paginate_queryset
+from .services import filter_queryset, generate_KPIs, get_page_numbers, get_plan_dashboard, calc_user_initiative_status, get_unread_notes_count, paginate_queryset
+# from .services import generate_KPIs,, get_plan_dashboard, filter_queryset, get_page_numbers, paginate_queryset
 from .forms import InitiativeForm, KPIForm, NoteForm, StrategicGoalForm, StrategicPlanForm, UserInitiativeForm
 from CPMS_app import models
 
-
-
-class LogMixin:
-    '''
-    - Mixin to automatically log all actions (CREATE, UPDATE, DELETE) for Class-Based Views (CBVs).
-    '''
-
-    # -----------------------------
-    # Handle form submissions (CREATE or UPDATE)
-    # -----------------------------
-    def form_valid(self, form):
-        '''
-        This method is called when a valid form is submitted.
-        - For UPDATE: captures old values before saving.
-        - Saves the object first, then logs the action (CREATE or UPDATE).
-        '''
-        # Check if this is an UPDATE
-        if hasattr(self, 'object') and self.object.pk:
-            old_data = model_to_dict(self.object)
-        else:
-            old_data = None
-
-        response = super().form_valid(form)
-
-        # Log the action after saving
-        create_log(
-            user=self.request.user,
-            action="CREATE" if self.request.method.lower() == "post" and not old_data else "UPDATE",
-            instance=self.object,
-            old_data=old_data
-        )
-
-        return response
-
-    # -----------------------------
-    # Handle object deletion
-    # -----------------------------
-    def delete(self, request, *args, **kwargs):
-        '''
-        This method is called when an object is deleted.
-        - Captures all old values before deletion.
-        - Deletes the object.
-        - Logs the DELETE action with old values.
-        '''
-        # Get the object to delete
-        self.object = self.get_object()
-
-        # Save old values before deletion
-        old_data = model_to_dict(self.object)
-
-        # Delete the object by calling parent class's delete
-        response = super().delete(request, *args, **kwargs)
-
-        # Log the deletion
-        create_log(
-            user=self.request.user,
-            action="DELETE",
-            old_data=old_data
-        )
-
-        return response
-
-
-
-def log_action(action_type="AUTO"):
-    '''
-    Decorator to log CREATE, UPDATE, DELETE actions for FBVs.
-    - GET requests are ignored (no logging)
-    '''
-    def decorator(view_func):
-        @wraps(view_func)
-        def _wrapped_view(request, *args, **kwargs):
-            # Only log POST/PUT/DELETE
-            if request.method.lower() in ["post", "put", "delete"]:
-                # Try to get the object if FBV uses 'pk' in kwargs
-                obj = None
-                if hasattr(view_func, 'model') and kwargs.get('pk'):
-                    obj = view_func.model.objects.filter(pk=kwargs['pk']).first()
-                old_data = model_to_dict(obj) if obj else None
-
-                response = view_func(request, *args, **kwargs)  # call the actual view
-
-                # Determine action type
-                action = action_type
-                if action_type == "AUTO":
-                    method = request.method.lower()
-                    if method == "post":
-                        action = "CREATE" if not old_data else "UPDATE"
-                    elif method == "put":
-                        action = "UPDATE"
-                    elif method == "delete":
-                        action = "DELETE"
-
-                # Safely get instance for logging
-                instance = obj if obj else getattr(response, 'instance', None)
-
-                # Call logging function
-                create_log(
-                    user=request.user,
-                    action=action,
-                    instance=instance,
-                    old_data=old_data
-                )
-
-                return response
-
-            # For GET requests, just call the view normally
-            return view_func(request, *args, **kwargs)
-
-        return _wrapped_view
-    return decorator
 
 
 
@@ -379,7 +268,7 @@ class AllInitiativeView(LoginRequiredMixin, InitiativePermissionMixin, ListView)
 
 
 
-class InitiativeDetailsView(LoginRequiredMixin, LogMixin, InitiativePermissionMixin, DetailView):
+class InitiativeDetailsView(LoginRequiredMixin, InitiativePermissionMixin, DetailView):
     '''
     - Shows details of a single initiative
     '''
@@ -424,7 +313,13 @@ class InitiativeDetailsView(LoginRequiredMixin, LogMixin, InitiativePermissionMi
         context['employees'] = employees 
         context['manager'] = manager.first()
         context['is_initiative_late'] = is_initiative_late
-        context['assigned_employees'] = assigned_employees 
+        context['assigned_employees'] = assigned_employees
+        
+        #  الملاحظات المرتبطة بالمبادرة
+        notes = Note.objects.filter(initiative=initiative, parent_note__isnull=True).order_by('-created_at')
+
+        context['initiative_notes'] = notes
+       
 
         if user.role.role_name == 'E':
             try:
@@ -442,7 +337,7 @@ class InitiativeDetailsView(LoginRequiredMixin, LogMixin, InitiativePermissionMi
 
 
 
-class CreateInitiativeView(LoginRequiredMixin,LogMixin, RoleRequiredMixin, InitiativePermissionMixin, CreateView):
+class CreateInitiativeView(LoginRequiredMixin, RoleRequiredMixin, InitiativePermissionMixin, CreateView):
     '''
     - Allows Managers to create a new initiative
     - Sets the strategic goal based on the goal_id in the URL
@@ -501,7 +396,7 @@ class CreateInitiativeView(LoginRequiredMixin,LogMixin, RoleRequiredMixin, Initi
 
 
 
-class UpdateInitiativeView(LoginRequiredMixin,LogMixin, RoleRequiredMixin, InitiativePermissionMixin, UpdateView):  #managers only
+class UpdateInitiativeView(LoginRequiredMixin, RoleRequiredMixin, InitiativePermissionMixin, UpdateView):  #managers only
     '''
     - Allows updating an existing initiative
     - Only the initiative fields are editable (title, description, dates, priority, category)
@@ -537,7 +432,7 @@ class UpdateInitiativeView(LoginRequiredMixin,LogMixin, RoleRequiredMixin, Initi
 
 
 
-class DeleteInitiativeView(LoginRequiredMixin,LogMixin, RoleRequiredMixin, InitiativePermissionMixin, DeleteView):#managers only
+class DeleteInitiativeView(LoginRequiredMixin, RoleRequiredMixin, InitiativePermissionMixin, DeleteView):#managers only
     '''
     - Allows deletion of an initiative
     - All related UserInitiative entries are automatically deleted (on_delete=CASCADE)
@@ -566,7 +461,7 @@ def is_manager(user):
 
 
 @login_required
-@log_action()
+
 @user_passes_test(is_manager)
 def assign_employee_to_initiative(request, pk):
     initiative = get_object_or_404(Initiative, id=pk)
@@ -621,7 +516,6 @@ def assign_employee_to_initiative(request, pk):
     })
 
 
-@log_action()
 def add_progress(request, initiative_id):
     user = request.user
     initiative = get_object_or_404(Initiative, id=initiative_id)
@@ -662,7 +556,6 @@ class KPIDetailsView(DetailView):
     context_object_name = "KPI"
 
 
-@log_action()
 @user_passes_test(is_manager)
 def create_kpi_view(request, initiative_id):
     '''
@@ -703,7 +596,7 @@ def create_kpi_view(request, initiative_id):
 
 
 
-class DeleteKPIView(RoleRequiredMixin, DeleteView, LogMixin):
+class DeleteKPIView(RoleRequiredMixin, DeleteView):
     '''
     - Allows users to delete a KPI
     - Confirms deletion using a template
@@ -727,7 +620,6 @@ class DeleteKPIView(RoleRequiredMixin, DeleteView, LogMixin):
 
 
 
-@log_action()
 def edit_kpi_view(request, initiative_id, kpi_id):
     kpi = get_object_or_404(KPI, id=kpi_id, initiative_id=initiative_id)
     
@@ -899,7 +791,7 @@ class PlanDetailsview(LoginRequiredMixin, RoleRequiredMixin, DetailView):
          return super().render_to_response(context, **response_kwargs)
 
 
-class CreatePlanView(LoginRequiredMixin, LogMixin, CreateView):
+class CreatePlanView(LoginRequiredMixin, CreateView):
     '''
     - Only Committee Manager can create a new strategic plan
     - Redirects to plan list after creation
@@ -921,7 +813,7 @@ class CreatePlanView(LoginRequiredMixin, LogMixin, CreateView):
         return super().form_valid(form)
 
 
-class UpdatePlanView(LoginRequiredMixin, LogMixin, UpdateView):
+class UpdatePlanView(LoginRequiredMixin, UpdateView):
     '''
     - Only Committee Manager can update an existing plan
     - Redirects to plans list after update
@@ -1014,7 +906,7 @@ class GoalDetailsview(LoginRequiredMixin, DetailView):
     context_object_name = 'goal'
 
 
-class CreateGoalView(LoginRequiredMixin, RoleRequiredMixin, LogMixin, CreateView):
+class CreateGoalView(LoginRequiredMixin, RoleRequiredMixin, CreateView):
     '''
     - Allows Managers and Committee Managers to create a new goal
     - Links the goal to the plan and the user's department
@@ -1033,7 +925,7 @@ class CreateGoalView(LoginRequiredMixin, RoleRequiredMixin, LogMixin, CreateView
         return reverse('plan_detail', kwargs={'pk': self.kwargs['plan_id']})
 
 
-class UpdateGoalView(LoginRequiredMixin, RoleRequiredMixin, LogMixin, UpdateView):
+class UpdateGoalView(LoginRequiredMixin, RoleRequiredMixin, UpdateView):
     '''
     - Managers and Committee Managers can update goals in their department
     - Updates goal details
@@ -1051,7 +943,7 @@ class UpdateGoalView(LoginRequiredMixin, RoleRequiredMixin, LogMixin, UpdateView
         return super().form_valid(form)
 
 
-class DeleteGoalView(LoginRequiredMixin, RoleRequiredMixin, LogMixin, DeleteView):
+class DeleteGoalView(LoginRequiredMixin, RoleRequiredMixin, DeleteView):
     '''
     - Managers and Committee Managers can delete goals in their department
     - Shows confirmation before deletion
@@ -1086,6 +978,8 @@ class AllNotesView(LoginRequiredMixin, ListView):
         role = user.role.role_name
         current_box = self.request.GET.get('box', 'all-notes')
         current_filter = self.request.GET.get('filter', '')
+        initiative_id = self.request.GET.get('initiative')
+
 
         # GM sees only notes he sent
         if role == 'GM':
@@ -1229,6 +1123,10 @@ class AllNotesView(LoginRequiredMixin, ListView):
 
         if current_filter == "initiative":
             qs = qs.filter(initiative__isnull=False)
+            
+        if initiative_id:
+           qs = qs.filter(initiative_id=initiative_id)
+
 
         # Search field
         qs = filter_queryset(
@@ -1449,7 +1347,7 @@ class NoteDetailsview(LoginRequiredMixin, DetailView):
      return HttpResponse(status=204)
 
 
-class CreateNoteView(LoginRequiredMixin, LogMixin, CreateView):
+class CreateNoteView(LoginRequiredMixin, CreateView):
     model = Note
     form_class = NoteForm
     template_name = 'partials/note_form.html'
@@ -1463,9 +1361,14 @@ class CreateNoteView(LoginRequiredMixin, LogMixin, CreateView):
     def get_initial(self):
         initial = super().get_initial()
         goal_id = self.request.GET.get('goal_id')
+        initiative_id = self.request.GET.get('initiative_id')
+        
 
         if goal_id:
             initial['strategic_goal'] = goal_id
+        if initiative_id:
+            initial['initiative'] = initiative_id
+
 
         return initial
 
@@ -1478,16 +1381,39 @@ class CreateNoteView(LoginRequiredMixin, LogMixin, CreateView):
         form.fields['initiative'].required = False
         form.fields['strategic_goal'].required = False
 
+        form.fields['receiver'].widget = forms.HiddenInput()
+        form.fields['initiative'].widget = forms.HiddenInput()
+        form.fields['strategic_goal'].widget = forms.HiddenInput()
+
         if role == 'GM':
+            form.fields['receiver'].widget = forms.Select()
             form.fields['receiver'].queryset = User.objects.filter(role__role_name__in=['M', 'CM'])
+            form.fields['strategic_goal'].widget = forms.Select()
             form.fields['strategic_goal'].queryset = StrategicGoal.objects.all()
 
         elif role in ['M', 'CM']:
+            form.fields['receiver'].widget = forms.Select()
             form.fields['receiver'].queryset = User.objects.filter(department=user.department, role__role_name='E')
-            form.fields['initiative'].queryset = Initiative.objects.filter(userinitiative__user__department=user.department).distinct()
+
+            form.fields['initiative'].widget = forms.Select()
+            form.fields['initiative'].queryset = Initiative.objects.filter(
+                userinitiative__user__department=user.department
+            ).distinct()
 
         elif role == 'E':
+            form.fields['initiative'].widget = forms.Select()
             form.fields['initiative'].queryset = Initiative.objects.filter(userinitiative__user=user).distinct()
+
+        # إذا دخلنا من الهدف hide كل شيء
+        if self.request.GET.get('goal_id'):
+            form.fields['strategic_goal'].widget = forms.HiddenInput()
+            form.fields['receiver'].widget = forms.HiddenInput()
+            form.fields['initiative'].widget = forms.HiddenInput()
+
+        if self.request.GET.get('initiative_id'):
+            form.fields['strategic_goal'].widget = forms.HiddenInput()
+            form.fields['receiver'].widget = forms.HiddenInput()
+            form.fields['initiative'].widget = forms.HiddenInput()
 
         return form
     
@@ -1495,24 +1421,39 @@ class CreateNoteView(LoginRequiredMixin, LogMixin, CreateView):
         context = super().get_context_data(**kwargs)
 
         goal_id = self.request.GET.get('goal_id')
+        initiative_id = self.request.GET.get('initiative_id')
+
         if goal_id:
             context['selected_goal'] = StrategicGoal.objects.get(id=goal_id)
+        if initiative_id:
+           context['selected_initiative'] = Initiative.objects.get(id=initiative_id)
 
         return context
 
     def form_valid(self, form):
         goal_id = self.request.GET.get('goal_id')
+        initiative_id = self.request.GET.get('initiative_id')
         if goal_id:
             form.instance.strategic_goal = StrategicGoal.objects.get(id=goal_id)
             form.instance.receiver = None
             form.instance.initiative = None
+        elif initiative_id:
+            form.instance.initiative = Initiative.objects.get(id=initiative_id)
+            form.instance.receiver = None
+            form.instance.strategic_goal = None
+    
 
         self.object = form.save(sender=self.request.user)
         messages.success(self.request, "تم إرسال الملاحظة بنجاح", extra_tags="create")
+        
+        next_url = self.request.GET.get('next')
+        if next_url:
+           return redirect(next_url)
+        
         return super().form_valid(form)
 
 
-class UpdateNoteView(LoginRequiredMixin, LogMixin, UpdateView):
+class UpdateNoteView(LoginRequiredMixin, UpdateView):
     '''
     - Allows updating a note
     - Only the sender can update their own notes
@@ -1538,7 +1479,7 @@ class UpdateNoteView(LoginRequiredMixin, LogMixin, UpdateView):
         return super().form_valid(form)
 
 
-class DeleteNoteView(LoginRequiredMixin, LogMixin, DeleteView):
+class DeleteNoteView(LoginRequiredMixin, DeleteView):
     '''
     - Allows deleting a note
     - Only the sender can delete their own notes
@@ -1567,11 +1508,13 @@ class DeleteNoteView(LoginRequiredMixin, LogMixin, DeleteView):
 # ---------------------------
 class AllLogsView(ListView):
     model = Log
-    template_name = 'logs_list.html'
+    template_name = 'log.html'
     context_object_name = 'logs'
+    paginate_by = 20  # لو تبي تقسيم صفحات
 
     def get_queryset(self):
-        return Log.objects.all()
+        return Log.objects.all().order_by('-created_at')
+
 
 
 

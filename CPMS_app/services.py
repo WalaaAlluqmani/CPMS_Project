@@ -8,6 +8,31 @@ from django.db.models import Prefetch
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models.functions import TruncMonth
 from django.utils import timezone
+from django.core.serializers.json import DjangoJSONEncoder
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+def model_to_dict_with_usernames(instance):
+    data = model_to_dict(instance)
+
+    # ===== Convert any FK to User into the user's name instead of ID =====
+    for field in instance._meta.fields:
+        if field.related_model == User:
+            user_obj = getattr(instance, field.name)
+            data[field.name] = user_obj.get_full_name() or user_obj.username if user_obj else None
+    
+    # ===== If this record is a reply (has parent_note) =====
+    if hasattr(instance, "parent_note") and instance.parent_note:
+        parent = instance.parent_note
+        parent_title = parent.title or ""
+
+        # If title is empty, set it to "Reply - :<parent_title>"
+        if not data.get("title"):
+            data["title"] = f"Reply - :{parent_title} "
+
+    return data
+
 
 
 def get_unread_notes_count(user):
@@ -52,31 +77,37 @@ def get_unread_notes_count(user):
     )
 
 
-def get_changed_fields(old_data, new_data):
-    '''
-    - Compare old and new data dictionaries and return only changed fields    
-    '''
-    diff = {}
-    for field, new_value in new_data.items():
-        old_value = old_data.get(field)
-        if old_value != new_value:
-            diff[field] = {"old_value": old_value, "new_value": new_value}
-    return diff
-
-
-def create_log(user, action, instance=None, old_data=None):
+def create_log(user, action, instance=None, old_data=None, table_name=None, record_id=None):
+    # get new_data
     new_data = model_to_dict(instance) if instance and action != "DELETE" else None
-    changed_fields = {}
-    if action == "UPDATE" and old_data:
-        changed_fields = get_changed_fields(old_data, new_data)
-        Log.objects.create(
-            user = user,
-            table_name = instance.__class__.__name__ if instance else "User",
-            record_id = instance.id if instance else user.id,
-            action = action,
-            old_value = changed_fields if changed_fields else old_data,
-            new_value = new_data if changed_fields else None
-        )
+
+    # try to get table_name and record_id from instance if not provided
+    if instance:
+        table_name = instance.__class__.__name__
+        record_id = instance.pk
+
+    # prepare values
+    if action == "CREATE":
+        old_value = None
+        new_value = json.dumps(new_data, ensure_ascii=False, cls=DjangoJSONEncoder)
+
+    elif action == "UPDATE":
+        old_value = json.dumps(old_data, ensure_ascii=False, cls=DjangoJSONEncoder)
+        new_value = json.dumps(new_data, ensure_ascii=False, cls=DjangoJSONEncoder)
+
+    elif action == "DELETE":
+        old_value = json.dumps(old_data, ensure_ascii=False, cls=DjangoJSONEncoder)
+        new_value = None
+
+    Log.objects.create(
+        user=user,
+        table_name=table_name,
+        record_id=record_id,
+        action=action,
+        old_value=old_value,
+        new_value=new_value
+    )
+
 
 
 def generate_KPIs(initiative):
