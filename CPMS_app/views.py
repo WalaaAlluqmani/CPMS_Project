@@ -260,6 +260,13 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             # Department Performance List
             goals = StrategicGoal.objects.all()
             departments = Department.objects.all()
+            initiatives = Initiative.objects.all()
+            userinitiatives = UserInitiative.objects.all()
+            for goal in goals:
+                goal.user_initiatives = initiatives.filter(strategic_goal=goal)
+            context['goals'] = goals
+
+            # List (  ) : list of all departments ordered by performance  
             departments_performance_dict = {dep.department_name: [] for dep in departments}            
             for goal in goals: # Avrage for each goal
                 goal_average = avg_calculator(UserInitiative.objects.filter(initiative__strategic_goal = goal, user__role__role_name = 'E' ))
@@ -277,52 +284,79 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             context['bar_chart_labels'] = bar_chart_labels
             context['bar_chart_data'] = bar_chart_data
 
-            # Hero Metric 
-            #doesn't look good T.T
-            initiatives = Initiative.objects.all()
-            donut_chart_labels = []
-            donut_chart_data = []
-            for initiative in initiatives:
-                donut_chart_labels.append(initiative.title)
-                donut_chart_data.append(weight_initiative(initiative))
-            
-            context['donut_chart_labels'] = donut_chart_labels
-            context['donut_chart_data'] = donut_chart_data
+            # Donut Chart ( حالة المبادرات ) : count of all user initiatives grouped by status
+            if userinitiatives.exists():
+                count = status_count(userinitiatives)                
+                context['donut_chart_labels'] = [s[1] for s in STATUS]
+                context['donut_chart_data'] = [count.get(key, 0) for key in status_order]                
 
             # LINE CHART -> departments progress 
-            
-            
             days = [ (now() - timedelta(days=i)).date() for i in range(29, -1, -1) ]  # oldest -> newest
-
             chart_data = {}
-
             for dept in departments:
                 logs = ProgressLog.objects.filter(
                     user__department=dept,
                     timestamp__gte=days[0]
                 ).order_by('timestamp')
-
                 # group by day
                 daily_avg = {}
                 for log in logs:
                     day = log.timestamp.date()
                     daily_avg.setdefault(day, []).append(log.progress)
-
-                # make sure all 30 days are present
                 chart_data[dept.department_name] = []
                 for day in days:
                     if day in daily_avg:
                         avg = sum(daily_avg[day]) / len(daily_avg[day])
                     else:
-                        avg = 0  # or None if you want gaps in the line
+                        avg = 0  
                     chart_data[dept.department_name].append({'date': day, 'avg': avg})
-
             context['line_chart_data'] = chart_data
             context['chart_days'] = days  # optional, if you want x-axis labels
 
+            # Stacked Bar Chart
+            goal_labels = []
+            not_started_data = []
+            in_progress_data = []
+            achieved_data = []
+            for goal in goals:
+                goal_labels.append(goal.goal_title)                
+                initiatives = Initiative.objects.filter(strategic_goal=goal)
+                ns_count, ip_count, a_count = 0, 0, 0
+                for initiative in initiatives:
+                    kpis_for_initiative = KPI.objects.filter(initiative=initiative)
+                    achieved, in_progress, not_started = kpi_filter(kpis_for_initiative)
+                    ns_count += len(not_started)
+                    ip_count += len(in_progress)
+                    a_count += len(achieved)
+                not_started_data.append(ns_count)
+                in_progress_data.append(ip_count)
+                achieved_data.append(a_count)
+            stacked_bar_chart_data = {
+                'labels': goal_labels,
+                'datasets': [
+                    {
+                        'label': 'لم يبدأ بعد',
+                        'data': not_started_data,
+                        'backgroundColor': '#F2C75C',
+                        'borderRadius': 4
+                    },
+                    {
+                        'label': 'قيد التنفيذ',
+                        'data': in_progress_data,
+                        'backgroundColor': '#00A399',
+                        'borderRadius': 4
+                    },
+                    {
+                        'label': 'مكتمل',
+                        'data': achieved_data,
+                        'backgroundColor': '#00685E',
+                        'borderRadius': 4
+                    },
+                ]
+            }
+            context['stacked_bar_chart_data'] = stacked_bar_chart_data
             
             context['plans'] = StrategicPlan.objects.all()  #  plans
-            context['goals'] = StrategicGoal.objects.all()  #  goals
             context['initiatives'] = Initiative.objects.all()  #  initiative
             context['kpis'] = KPI.objects.all()  #  KPIs
 
@@ -333,7 +367,10 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         elif user.role.role_name in ['M', 'CM']:
             userinitiatives = UserInitiative.objects.filter(user__department = user.department, user__role__role_name = 'E' )
             initiatives = Initiative.objects.filter(userinitiative__user=user )
-
+            goals = StrategicGoal.objects.filter(department = user.department) 
+            for goal in goals:
+                goal.user_initiatives = initiatives.filter(strategic_goal=goal)
+            context['goals'] = goals
 
             # Donut Chart ( حالة المبادرات  ) : count of all user initiatives grouped by status
             initiative_id = self.request.GET.get('initiative')  # if there is filter
@@ -346,7 +383,6 @@ class DashboardView(LoginRequiredMixin, TemplateView):
 
 
             # Bar Chart ( مدى اكتمال الأهداف ) : avg of progress in each goal
-            goals = StrategicGoal.objects.filter(department = user.department) 
             bar_chart_labels = []
             bar_chart_data = []
             for goal in goals:
@@ -412,7 +448,6 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             context['stacked_bar_chart_data'] = stacked_bar_chart_data
 
             context['plans'] = StrategicPlan.objects.all()  #  plans
-            context['goals'] = StrategicGoal.objects.filter(department = user.department)  #  goals
             context['initiatives'] = initiatives  #  initiative
             context['kpis'] = KPI.objects.filter(initiative__userinitiative__user=user)  #  KPIs
 
@@ -422,11 +457,15 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         # EMPLOYEES #
         else: 
             context['plans'] = StrategicPlan.objects.filter(is_active = True)  #  plans
-            context['goals'] = StrategicGoal.objects.all().prefetch_related('initiative_set__userinitiative_set')  #  goals
             context['initiatives'] = Initiative.objects.filter(userinitiative__user=user)  #  initiative
             context['kpis'] = KPI.objects.filter(initiative__userinitiative__user=user)  #  KPIs
             initiatives = Initiative.objects.filter(userinitiative__user=user)
             userinitiatives = UserInitiative.objects.filter(user = user)
+            goals = StrategicGoal.objects.filter(initiative__userinitiative__user=user).distinct().prefetch_related('initiative_set__userinitiative_set')
+
+            for goal in goals:
+                goal.user_initiatives = initiatives.filter(strategic_goal=goal)
+            context['goals'] = goals
             # Donut Chart ( حالة مبادراتي  ) : count of all user initiatives grouped by status
             if userinitiatives.exists():
                 count = status_count(userinitiatives)                
