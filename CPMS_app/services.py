@@ -312,10 +312,10 @@ def get_plan_dashboard(plan, user):
     goals_delayed = goals.filter(goal_status='D').count()
 
     # -----------------------------
-    initiatives_not_started = initiatives_qs.filter(userinitiative__status='NS').count()
-    initiatives_in_progress = initiatives_qs.filter(userinitiative__status='IP').count()
-    initiatives_completed = initiatives_qs.filter(userinitiative__status='C').count()
-    initiatives_delayed = initiatives_qs.filter(userinitiative__status='D').count()
+    initiatives_not_started = initiatives_qs.filter(initiative_status='NS').count()
+    initiatives_in_progress = initiatives_qs.filter(initiative_status='IP').count()
+    initiatives_completed = initiatives_qs.filter(initiative_status='C').count()
+    initiatives_delayed = initiatives_qs.filter(initiative_status='D').count()
 
     # -----------------------------
     priority_map = {'C': 1, 'H': 2, 'M': 3, 'L': 4}
@@ -335,7 +335,7 @@ def get_plan_dashboard(plan, user):
 
     initiatives_total = len(i)
 
-    initiatives_status = [
+    initiative_status = [
     initiatives_not_started,
     initiatives_in_progress,
     initiatives_completed,
@@ -360,7 +360,7 @@ def get_plan_dashboard(plan, user):
         'goals_total': goals_total,
         'initiatives_count':initiatives_total,
         'goals_status': goals_status,
-        'initiatives_status': initiatives_status,
+        'initiative_status': initiative_status,
         'delayed_goals_monthly': delayed_goals_monthly,
         'plan_avg': round(plan_avg),
         'plan_avg_by_two': round(plan_avg / 2),
@@ -422,16 +422,22 @@ def calc_initiative_status_by_avg(initiative):
     end_date = initiative.end_date
     today = date.today()
 
+    # حماية من التواريخ الخاطئة
     total_days = max((end_date - start_date).days, 1)
-    days_left = 0 if end_date < today else (end_date - today).days
+    days_left = (end_date - today).days
 
+    # ===== STATUS LOGIC =====
     if avg_progress >= 100:
-        return 'C'
-    elif days_left <= 0.10 * total_days:
-        return 'D'
-    elif avg_progress > 0:
-        return 'IP'
-    return 'NS'
+        return 'C'  # Completed
+
+    if today > end_date:
+        return 'D'  # Delayed
+
+    if avg_progress > 0:
+        return 'IP'  # In Progress
+
+    return 'NS'  # Not Started
+
 #=====================================================================
 def calc_goal_progress(goal, user):
     qs = goal.initiative_set.all()

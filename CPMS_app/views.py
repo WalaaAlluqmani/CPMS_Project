@@ -24,7 +24,7 @@ from django.db.models import Prefetch
 from .forms import InitiativeForm, KPIForm, NoteForm, StrategicGoalForm, StrategicPlanForm, UserInitiativeForm
 from .models import ( STATUS, Role, Department, User, StrategicPlan, StrategicGoal,
                         Initiative, UserInitiative, KPI, Note, Log, ProgressLog)
-from .services import ( calc_goal_status, generate_KPIs,  create_log, get_plan_dashboard, calc_user_initiative_status, 
+from .services import ( calc_goal_status, calc_initiative_status_by_avg, generate_KPIs,  create_log, get_plan_dashboard, calc_user_initiative_status, 
                         filter_queryset, get_page_numbers, model_to_dict_with_usernames, paginate_queryset, status_count, avg_calculator, 
                         calc_delayed, kpi_filter, weight_initiative, get_unread_notes_count, departments_progress_over_time)
 
@@ -814,9 +814,15 @@ def add_progress(request, initiative_id):
             goal.goal_status = new_status
             goal.save()
 
-            # status = calc_user_initiative_status(user_initiative)
-            # user_initiative.status = status
-            # user_initiative.save()
+           # ===== Update Initiative Status =====
+            old_status = initiative.initiative_status
+            new_status = calc_initiative_status_by_avg(initiative)
+            print("OLD STATUS:", old_status)
+            print("NEW STATUS:", new_status)
+            if old_status != new_status:
+                initiative.initiative_status = new_status
+                initiative.save()
+                print("Status updated ✔")
    
             logger = LogMixin(request=request)
             logger.log_update(old_instance=old_data, new_instance=obj)

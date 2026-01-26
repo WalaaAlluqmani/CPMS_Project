@@ -492,7 +492,7 @@
     },
         {
             label: 'المبادرات',
-            data: {{ initiatives_status }},
+            data: {{ initiative_status }},
         backgroundColor: ['#CBD5E1', '#93C5FD', '#86EFAC', '#FCA5A5'],
         borderWidth: 0,
         weight: 1
@@ -538,7 +538,7 @@
         month: 'short',
         year: 'numeric'
     }));
-
+ 
     const lineData = delayedData.map(d => d.count);
 
     new Chart(document.getElementById("delayedGoalsLineChart"), {
