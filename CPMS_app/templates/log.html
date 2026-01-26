@@ -1,76 +1,74 @@
-{% extends 'base.html' %}
-{% load static %}
+{% extends "base.html" %}
+{% block title %}سجل النظام{% endblock %}
 {% block breadcrumb %}
 <li class="flex items-center">
     <span class="mx-2">/</span>
-    <span class="text-gray-800 font-semibold">سجل الأحداث</span>
+    <span class="text-gray-800 font-semibold">سجل النظام</span>
 </li>
 {% endblock %}
 
 {% block content %}
-<h2 class="text-2xl font-bold mb-4">كل السجلات</h2>
 
-<section dir="rtl">
-    <div class="max-w-3xl mx-auto px-4 py-6 space-y-6">
+<div class="max-w-7xl mx-auto p-6" dir="rtl">
 
-        <div class=" rounded-lg shadow-md">
-            <table class="w-full text-right text-xs text-gray-700 border border-gray-200 table-auto">
-                <thead class="bg-blue-500 text-white">
-                    <tr>
-                        <th class="px-3 py-2 w-[15%]">المستخدم</th>
-                        <th class="px-3 py-2 w-[12%]">الجدول</th>
-                        <th class="px-3 py-2 w-[8%]">السجل</th>
-                        <th class="px-3 py-2 w-[10%]">الحدث</th>
-                        <th class="px-3 py-2 w-[35%]">التفاصيل</th>
-                        <th class="px-3 py-2 w-[20%]">التاريخ</th>
-                    </tr>
-                </thead>
+    <h2 class="text-2xl font-semibold mb-6">سجل النظام</h2>
 
-                <tbody>
-                    {% for log in logs %}
-                    <tr class="border-b bg-white hover:bg-gray-50">
-                        <td class="px-3 py-2">{{ log.user.get_full_name }}</td>
-                        <td class="px-3 py-2">{{ log.table_name }}</td>
-                        <td class="px-3 py-2 text-center">{{ log.record_id|default:"—" }}</td>
-                        <td class="px-3 py-2 font-semibold">{{ log.action }}</td>
-
-                        <td class="px-3 py-2 text-xs text-gray-600 whitespace-pre-line">
-                            {{ log.old_value|default:"—" }}
-                        </td>
-
-                        <td class="px-3 py-2 text-xs text-gray-500">
-                            {{ log.created_at|date:"Y/m/d H:i" }}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-
-            </table>
-        </div>
-
-
-
-        <!-- Pagination -->
-        <div class="flex justify-center items-center gap-3 mt-4">
-            {% if logs.has_previous %}
-            <a href="?page={{ logs.previous_page_number }}"
-                class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">
-                السابق
-            </a>
-            {% endif %}
-
-            <span class="px-4 py-2 bg-gray-200 rounded-lg">
-                الصفحة {{ logs.number }} من {{ logs.paginator.num_pages }}
-            </span>
-
-            {% if logs.has_next %}
-            <a href="?page={{ logs.next_page_number }}"
-                class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">
-                التالي
-            </a>
-            {% endif %}
-        </div>
-
+    <div class="overflow-x-auto bg-white shadow rounded-lg border border-gray-200">
+        <table class="min-w-full text-sm text-gray-700">
+            <thead class="bg-gray-50 border-b text-gray-600">
+                <tr>
+                    <th class="px-4 py-3 text-center">المستخدم</th>
+                    <th class="px-4 py-3 text-center">الجدول</th>
+                    <!-- <th class="px-4 py-3 text-center">معرّف السجل</th> -->
+                    <th class="px-4 py-3 text-center">الإجراء</th>
+                    <th class="px-4 py-3 text-center">التاريخ</th>
+                    <th class="px-4 py-3 text-center">التفاصيل</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y">
+                {% for log in logs %}
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="px-4 py-2 text-center">{{ log.user.get_full_name }}</td>
+                    <td class="px-4 py-2 text-center">{{ log.user_friendly_table_name }}</td>
+                    <!-- <td class="px-4 py-2 text-center">{{ log.record_id }}</td> -->
+                    <td class="px-4 py-2 text-center capitalize">{{ log.user_friendly_action }}</td>
+                    <td class="px-4 py-2 text-center">{{ log.created_at|date:"Y-m-d H:i" }}</td>
+                    <td class="px-4 py-2 text-right">
+                            <ul>
+                                {% for item in log.details %}
+                                    <li>{{ item }}</li>
+                                {% empty %}
+                                    <li>لا توجد تفاصيل</li>
+                                {% endfor %}
+                            </ul>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="px-4 py-3 text-center text-gray-400">لا توجد سجلات</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
-</section>
+
+    <!-- Pagination -->
+    <div class="flex justify-between items-center mt-4 text-gray-600">
+        {% if logs.has_previous %}
+            <a href="?page={{ logs.previous_page_number }}" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">السابق</a>
+        {% else %}
+            <span class="px-3 py-1 bg-gray-100 rounded text-gray-400 cursor-not-allowed">السابق</span>
+        {% endif %}
+
+        <span>صفحة {{ logs.number }} من {{ logs.paginator.num_pages }}</span>
+
+        {% if logs.has_next %}
+            <a href="?page={{ logs.next_page_number }}" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">التالي</a>
+        {% else %}
+            <span class="px-3 py-1 bg-gray-100 rounded text-gray-400 cursor-not-allowed">التالي</span>
+        {% endif %}
+    </div>
+
+</div>
+
 {% endblock %}
